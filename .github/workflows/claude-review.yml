@@ -1,0 +1,65 @@
+name: Review oleh Claude
+
+# Setiap PR otomatis ditinjau Claude sebelum kamu membacanya sendiri.
+# Bukan pengganti review manusia — tugasnya menangkap hal-hal mekanis
+# (celah keamanan, tes yang kurang, penanganan error) supaya waktumu
+# terpakai untuk keputusan produk, bukan mencari typo.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    name: Tinjau perubahan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Claude perlu riwayat untuk membandingkan perubahan
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Tinjau pull request ini untuk proyek One Strip Clover — sebuah
+            photobox digital dengan kode akses berbayar. Tulis review dalam
+            Bahasa Indonesia.
+
+            Utamakan hal-hal yang benar-benar bisa merugikan:
+
+            1. KEAMANAN & UANG
+               - Apakah ada cara memakai fitur premium tanpa kode yang sah?
+               - Apakah kode akses bisa dipakai ulang / dibagikan / ditebak?
+               - Apakah pemeriksaan penting dilakukan di SERVER, bukan hanya
+                 di browser? (apa pun di browser bisa diakali lewat DevTools)
+               - Apakah ada rahasia (.env, kunci, token) yang bocor ke kode,
+                 log, atau respons API?
+
+            2. KEHILANGAN DATA
+               - Apakah ada penulisan ke data/codes.json yang tidak lewat
+                 lib/store.js? Penulisan langsung menyebabkan balapan data.
+               - Apakah kegagalan pengiriman (email/Drive) bisa membuat foto
+                 pembeli hilang tanpa jejak?
+
+            3. TES
+               - Apakah perubahan logika disertai tes?
+               - Apakah ada tes yang dihapus atau dilemahkan tanpa alasan?
+
+            4. KONSISTENSI
+               - Ukuran strip/cetak harus tetap 51 x 152 mm di atas A4.
+               - Penggambar strip HANYA boleh ada di
+                 public/shared/strip-renderer.js (dipakai browser & server).
+                 Tolak salinan penggambar kedua.
+
+            Format: mulai dengan ringkasan 2-3 kalimat, lalu daftar temuan
+            berlabel [KRITIS] / [PENTING] / [SARAN]. Kalau tidak ada masalah
+            berarti, katakan begitu dengan jelas — jangan mengarang temuan.
+            Sebutkan nama berkas dan nomor baris kalau memungkinkan.
+          claude_args: |
+            --max-turns 15

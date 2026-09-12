@@ -13,7 +13,9 @@
     "backup": "node scripts/backup-codes.js",
     "cleanup": "node scripts/cleanup-data.js",
     "template": "node scripts/make-template.js",
-    "sim": "node scripts/simulasi-browser.js"
+    "sim": "node scripts/simulasi-browser.js",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" --test-coverage-exclude=\"backend-go/**\" --test-coverage-exclude=\"frontend-react/**\" --test-coverage-lines=85 --test-coverage-functions=85 --test-coverage-branches=70 \"test/*.test.js\"",
+    "ci": "npm test && npm run test:coverage && npm run sim"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

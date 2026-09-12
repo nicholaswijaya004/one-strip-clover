@@ -1,7 +1,28 @@
-node_modules/
+# --- rahasia (JANGAN pernah masuk git) ---
 .env
-data/batch-*.txt
-data/*.log
-data/*.log.1
-data/settings.json
-data/template/
+.env.local
+.env.*.local
+
+# --- dependensi ---
+node_modules/
+
+# --- DATA JALAN (runtime) ---
+# codes.json berisi kode yang kamu JUAL. Kalau ikut masuk git:
+#   • siapa pun yang bisa membaca repo punya semua kode yang masih berlaku
+#   • setiap generate batch bikin konflik merge
+#   • versi di repo bisa menimpa data asli saat deploy
+# Semuanya tinggal di volume server, bukan di git.
+data/
+!data/.gitkeep
+
+# --- berkas yang dihasilkan skrip ---
+contoh-template-*.png
+*.log
+
+# --- sistem ---
+.DS_Store
+Thumbs.db
+
+# --- kunci SSH (JANGAN pernah masuk git) ---
+Documents
+Documents.pub

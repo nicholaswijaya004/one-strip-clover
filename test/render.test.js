@@ -79,7 +79,7 @@ test("render: browser jatuh ke versi berwatermark kalau server tidak bisa", () =
 test("render: unduhan premium TIDAK lagi memakai kanvas browser", () => {
   const fn = index.slice(index.indexOf("async function ambilStripUntukDiunduh"));
   const potongan = fn.slice(0, 1600);
-  assert.ok(potongan.includes("/api/render-strip"), "premium harus minta ke server");
+  assert.ok(potongan.includes("ROUTE.RENDER"), "premium harus minta ke server");
   assert.ok(potongan.includes("S.premium"), "hanya premium yang lewat server");
 });
 

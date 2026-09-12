@@ -131,12 +131,26 @@ mencetak lalu memotong.
 
 ---
 
+## Alur kerja & CI
+
+Setiap PR otomatis diperiksa: tes (Node 20 & 22), ambang cakupan, smoke test
+server, penjaga rahasia, dan review oleh Claude.
+
+```bash
+npm run ci    # jalankan semua pemeriksaan sebelum push
+```
+
+Panduan lengkap + cara menyalakan CI pertama kali: **CONTRIBUTING.md**
+
+---
+
 ## Dokumen penting
 
 | Berkas | Isi |
 |---|---|
 | `SECURITY.md` | Hasil audit keamanan: 10 celah yang ditemukan & diperbaiki |
 | `PRODUCTION.md` | Ceklis go-live, pemantauan, rencana darurat |
+| `CONTRIBUTING.md` | Alur kerja, setup CI, ambang cakupan |
 | `ARCHITECTURE.md` | Materi belajar OOAD & design pattern (proyek Go/React) |
 
 ---

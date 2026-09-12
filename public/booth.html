@@ -6,6 +6,7 @@
 <title>One Strip Clover — photobox digital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="/shared/contract.js"></script>
 <script src="/shared/strip-renderer.js"></script>
 <script>
   // Kalau modul bersama gagal dimuat (mis. browser memakai versi lama dari
@@ -580,7 +581,7 @@ const TPL = { items:[], images:{} };  // images: id → objek gambar yang sudah 
 
 async function loadTemplate(){
   try{
-    const r = await fetch("/api/template");
+    const r = await fetch(ROUTE.TEMPLATE);
     const d = await r.json();
     TPL.items = (d && Array.isArray(d.items)) ? d.items : [];
 
@@ -604,7 +605,7 @@ async function loadTemplate(){
 /* Ambil setelan toko dari server, lalu gambar ulang kotak "beli kode" */
 async function loadShopConfig(){
   try{
-    const r = await fetch("/api/config");
+    const r = await fetch(ROUTE.CONFIG);
     const d = await r.json();
     if(!d || !d.ok) return;
     SHOP.price = d.price || "";
@@ -686,6 +687,12 @@ jalankan("terapkanRasioFoto", ()=>terapkanRasioFoto(null));
 // Jumlah foto per sesi — diambil dari modul bersama supaya browser & server
 // tidak mungkin berbeda angka.
 const SHOTS = (window.StripRenderer && window.StripRenderer.PHOTO_COUNT) || 3;
+
+/* Kode error & alamat API diambil dari kontrak bersama (shared/contract.js),
+   BUKAN ditulis ulang sebagai teks. Kalau server mengganti nama sebuah kode,
+   sisi ini ikut berubah — tidak ada lagi perbandingan teks yang diam-diam
+   tidak pernah cocok. */
+const ERR = OSC.ERR, ROUTE = OSC.ROUTE;
 
 /* ---------------- penampil error di layar ----------------
    Tanpa ini, satu baris yang gagal membuat separuh halaman mati diam-diam
@@ -935,7 +942,7 @@ async function restorePremium(){
 
   // 1) token masih sah?
   try{
-    const r = await fetch("/api/session",{method:"POST",
+    const r = await fetch(ROUTE.SESSION,{method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({token:saved.token})});
     const d = await r.json();
@@ -949,7 +956,7 @@ async function restorePremium(){
   // 2) token kedaluwarsa tapi kodenya masih dalam masa tenggang → tukar ulang
   if(saved.code){
     try{
-      const r = await fetch("/api/redeem",{method:"POST",
+      const r = await fetch(ROUTE.REDEEM,{method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({code:saved.code, deviceId:deviceId()})});
       const d = await r.json();
@@ -1214,7 +1221,7 @@ async function ambilStripUntukDiunduh(){
   // tanpa token sah, server menolak dan yang didapat tetap berwatermark.
   if(S.premium && S.token && S.photos.length===SHOTS){
     try{
-      const r=await fetch("/api/render-strip",{method:"POST",
+      const r=await fetch(ROUTE.RENDER,{method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           token:S.token, photos:S.photos,
@@ -1330,7 +1337,7 @@ $("codeSubmit").onclick=async ()=>{
   if(!code){ msg.textContent="Isi kodenya dulu ya."; msg.classList.add("err"); return; }
   msg.textContent="Memeriksa kode…";
   try{
-    const r=await fetch("/api/redeem",{method:"POST",
+    const r=await fetch(ROUTE.REDEEM,{method:"POST",
       headers:{"Content-Type":"application/json"},
       // deviceId WAJIB ikut — tanpa ini server tidak bisa mengikat kode
       // ke satu perangkat, dan kode yang dibagikan akan bisa dipakai siapa saja.
@@ -1346,15 +1353,15 @@ $("codeSubmit").onclick=async ()=>{
       setTimeout(()=>{ closeOverlays(); if(S.photos.length===SHOTS) composeStrip(); },900);
     }else{
       msg.classList.add("err");
-      msg.innerHTML = d.error==="TOO_MANY_REQUESTS"
+      msg.innerHTML = d.error===ERR.TOO_MANY_REQUESTS
         ? "Terlalu banyak percobaan kode. Tunggu beberapa menit ya."
-        : d.error==="OTHER_DEVICE"
+        : d.error===ERR.OTHER_DEVICE
         ? "Kode ini sudah dipakai di perangkat lain. Satu kode hanya untuk satu perangkat. Kalau ini memang kodemu, hubungi kami ya."
-        : d.error==="SPENT"
+        : d.error===ERR.SPENT
         ? (d.ref
             ? `Kode ini sudah dipakai untuk pesanan <b>${d.ref}</b>. Satu kode hanya untuk satu strip.`
             : "Kode ini sudah dipakai untuk memesan. Satu kode hanya untuk satu strip.")
-        : d.error==="USED"
+        : d.error===ERR.USED
         ? `Kode ini sudah dipakai lebih dari ${d.graceHours||72} jam lalu. Kalau kamu merasa ini keliru, hubungi kami dengan menyebutkan kodenya.`
         : "Kode tidak ditemukan. Cek lagi ejaannya ya.";
     }
@@ -1407,19 +1414,19 @@ function handleStudioResponse(d,msg,setProg){
   const e=(d&&d.error)||"";
   const say=(t)=>{ msg.innerHTML=t; msg.classList.add("err"); };
 
-  if(e==="PREMIUM_REQUIRED"){
+  if(e===ERR.PREMIUM_REQUIRED){
     say("Sesi premium habis atau belum aktif. Masukkan kode premium lagi.");
     setTimeout(()=>{ closeOverlays(); openOverlay("codeOverlay"); },1400);
   }
-  else if(e==="NAME_REQUIRED")     say("Nama lengkap wajib diisi.");
-  else if(e==="CONTACT_REQUIRED")  say("Isi email atau nomor WhatsApp.");
-  else if(e==="ADDRESS_REQUIRED")  say("Alamat pengiriman wajib diisi.");
-  else if(e==="SUBMISSION_LIMIT")  say("Kode ini sudah dipakai untuk <b>"+d.max+"x</b> pesanan studio (batas maksimal). Hubungi kami kalau ada kendala.");
-  else if(e==="TOO_MANY_REQUESTS") say("Terlalu banyak percobaan. Coba lagi beberapa menit lagi.");
-  else if(e==="ALREADY_PROCESSING") say("Pesananmu sedang diproses — tunggu sebentar, jangan menekan kirim dua kali ya.");
-  else if(e==="NOT_CONFIGURED")    say("Email/Drive belum diatur di server. Cek file <b>.env</b> lalu restart server.");
-  else if(e==="TIMEOUT")           say("Jaringan terlalu lambat sampai waktu habis. Coba pakai WiFi, lalu kirim ulang.");
-  else if(e==="NETWORK")           say("Koneksi terputus saat mengirim. Cek internetmu lalu coba lagi.");
+  else if(e===ERR.NAME_REQUIRED)     say("Nama lengkap wajib diisi.");
+  else if(e===ERR.CONTACT_REQUIRED)  say("Isi email atau nomor WhatsApp.");
+  else if(e===ERR.ADDRESS_REQUIRED)  say("Alamat pengiriman wajib diisi.");
+  else if(e===ERR.SUBMISSION_LIMIT)  say("Kode ini sudah dipakai untuk <b>"+d.max+"x</b> pesanan studio (batas maksimal). Hubungi kami kalau ada kendala.");
+  else if(e===ERR.TOO_MANY_REQUESTS) say("Terlalu banyak percobaan. Coba lagi beberapa menit lagi.");
+  else if(e===ERR.ALREADY_PROCESSING) say("Pesananmu sedang diproses — tunggu sebentar, jangan menekan kirim dua kali ya.");
+  else if(e===ERR.NOT_CONFIGURED)    say("Email/Drive belum diatur di server. Cek file <b>.env</b> lalu restart server.");
+  else if(e===ERR.TIMEOUT)           say("Jaringan terlalu lambat sampai waktu habis. Coba pakai WiFi, lalu kirim ulang.");
+  else if(e===ERR.NETWORK)           say("Koneksi terputus saat mengirim. Cek internetmu lalu coba lagi.");
   else                             say("Gagal mengirim. Coba lagi, atau hubungi kami langsung.");
 }
 
@@ -1489,7 +1496,7 @@ $("studioSubmit").onclick=async ()=>{
     // XHR dipakai (bukan fetch) karena hanya XHR yang bisa melaporkan
     // progres upload — penting karena payload bisa 2-4 MB di jaringan HP.
     const xhr=new XMLHttpRequest();
-    xhr.open("POST","/api/fallback-upload");
+    xhr.open("POST",ROUTE.ORDER);
     xhr.setRequestHeader("Content-Type","application/json");
     xhr.timeout=180000; // 3 menit, jaringan lambat masih diberi kesempatan
 
@@ -1505,11 +1512,11 @@ $("studioSubmit").onclick=async ()=>{
       let d={}; try{ d=JSON.parse(xhr.responseText); }catch(e){}
       finish(d);
     };
-    xhr.onerror=()=>finish({error:"NETWORK"});
-    xhr.ontimeout=()=>finish({error:"TIMEOUT"});
+    xhr.onerror=()=>finish({error:ERR.NETWORK});
+    xhr.ontimeout=()=>finish({error:ERR.TIMEOUT});
     xhr.send(payload);
   }catch(e){
-    finish({error:"NETWORK"});
+    finish({error:ERR.NETWORK});
   }
   $("studioSubmit").disabled=false;
 };

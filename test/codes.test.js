@@ -1,25 +1,13 @@
+require("./_setup").pakaiDataSementara();
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
-const CODES_FILE = path.join(__dirname, "..", "data", "codes.json");
-const BACKUP = path.join(__dirname, "..", "data", "codes.test-backup.json");
-
-// Semua tes menulis ke data/codes.json, jadi isi aslinya diamankan dulu.
-test.before(() => {
-  if (fs.existsSync(CODES_FILE)) fs.copyFileSync(CODES_FILE, BACKUP);
-});
-test.after(() => {
-  if (fs.existsSync(BACKUP)) {
-    fs.copyFileSync(BACKUP, CODES_FILE);
-    fs.unlinkSync(BACKUP);
-  } else if (fs.existsSync(CODES_FILE)) {
-    fs.unlinkSync(CODES_FILE);
-  }
-});
-
+// DATA_DIR sudah diarahkan ke folder sementara oleh _setup, jadi tes ini
+// TIDAK PERNAH menyentuh data/codes.json asli. Tidak perlu backup-restore.
 const lib = require("../lib/codes");
+const CODES_FILE = lib.CODES_FILE;
 const reset = () => fs.writeFileSync(CODES_FILE, "{}");
 
 /* --------------------------- pembuatan kode --------------------------- */

@@ -215,7 +215,7 @@ test("frontend WAJIB mengirim deviceId di semua panggilan redeem", () => {
   const html = fs.readFileSync(
     path.join(__dirname, "..", "public", "booth.html"), "utf8"
   );
-  const panggilan = [...html.matchAll(/fetch\("\/api\/redeem"[\s\S]{0,320}?\)\}\);/g)];
+  const panggilan = [...html.matchAll(/fetch\(ROUTE\.REDEEM[\s\S]{0,320}?\)\}\);/g)];
   assert.ok(panggilan.length >= 2, "harus ada minimal 2 tempat memanggil /api/redeem");
   for (const p of panggilan) {
     assert.ok(

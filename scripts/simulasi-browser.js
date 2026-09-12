@@ -15,6 +15,7 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const html = fs.readFileSync(path.join(ROOT, "public", "booth.html"), "utf8");
 const renderer = require(path.join(ROOT, "public", "shared", "strip-renderer.js"));
+const kontrak = require(path.join(ROOT, "public", "shared", "contract.js"));
 
 // ---- id yang benar-benar ada di HTML ----
 const ID_ADA = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
@@ -111,13 +112,14 @@ global.document = {
 };
 
 global.window = {
-  StripRenderer: renderer, __oscSiap: true,
+  StripRenderer: renderer, OSC: kontrak, __oscSiap: true,
   matchMedia: () => ({ matches: false }),
   addEventListener(ev, fn) { catatan.handler[`window:${ev}`] = fn; },
   scrollTo() {},
 };
 global.self = global.window;
 global.StripRenderer = renderer;
+global.OSC = kontrak;
 global.addEventListener = global.window.addEventListener;
 global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 global.sessionStorage = global.localStorage;

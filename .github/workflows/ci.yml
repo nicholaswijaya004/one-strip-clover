@@ -1,0 +1,165 @@
+name: CI
+
+# Jalan di setiap push ke main dan setiap pull request.
+# Tujuannya sederhana: jangan sampai ada kode masuk ke main yang
+# membuat tes gagal, menurunkan cakupan tes, atau membocorkan rahasia.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Batalkan run lama kalau ada push baru di branch yang sama —
+# hemat waktu antre dan kuota.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------- tes
+  test:
+    name: Tes & cakupan (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Node 20 = LTS lama yang masih banyak dipakai hosting,
+        # Node 22 = yang kita pakai di produksi.
+        node: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Pasang dependensi
+        run: npm ci
+
+      - name: Periksa sintaks semua berkas JS
+        run: |
+          set -e
+          for f in server.js lib/*.js scripts/*.js; do
+            node --check "$f"
+          done
+          echo "✓ sintaks server & lib aman"
+
+      - name: Periksa sintaks skrip di dalam HTML
+        run: |
+          node -e '
+            const fs = require("fs");
+            let gagal = 0;
+            for (const f of ["public/index.html", "public/booth.html", "public/admin.html"]) {
+              const h = fs.readFileSync(f, "utf8");
+              const i = h.lastIndexOf("<script>"), j = h.lastIndexOf("</script>");
+              if (i < 0) { console.log("· " + f + " (tanpa skrip)"); continue; }
+              try { new Function(h.slice(i + 8, j)); console.log("✓ " + f); }
+              catch (e) { console.error("✗ " + f + ": " + e.message); gagal++; }
+            }
+            process.exit(gagal ? 1 : 0);
+          '
+
+      - name: Jalankan tes
+        run: npm test
+
+      - name: Tes + ambang cakupan
+        # Ambang sengaja sedikit di bawah angka sekarang, supaya PR yang
+        # menurunkan cakupan secara berarti akan GAGAL, tapi perbaikan kecil
+        # tidak terhambat. Naikkan angkanya seiring cakupan membaik.
+        run: npm run test:coverage
+
+      - name: Simulasi browser (halaman photobox benar-benar hidup)
+        run: |
+          npm run sim
+          UJI_TEMPLATE=1 npm run sim
+
+  # -------------------------------------------------------------- smoke
+  smoke:
+    name: Server benar-benar bisa hidup
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Nyalakan server & periksa halaman
+        env:
+          PORT: 3123
+          ADMIN_KEY: kunci-uji-ci
+          SESSION_SECRET: rahasia-uji-ci-yang-cukup-panjang
+        run: |
+          set -e
+          npm start &
+          SERVER_PID=$!
+          # tunggu sampai siap (maks 30 detik)
+          for i in $(seq 1 30); do
+            if curl -sf "http://localhost:$PORT/healthz" > /dev/null; then break; fi
+            sleep 1
+          done
+
+          echo "--- /healthz ---"
+          curl -sf "http://localhost:$PORT/healthz" | tee /tmp/health.json
+          echo
+
+          echo "--- halaman ---"
+          for jalur in / /booth /admin /api/config /api/template; do
+            kode=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT$jalur")
+            echo "$jalur → $kode"
+            [ "$kode" = "200" ] || { echo "✗ $jalur gagal"; kill $SERVER_PID; exit 1; }
+          done
+
+          echo "--- admin harus MENOLAK tanpa kunci ---"
+          kode=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" -d '{}' \
+            "http://localhost:$PORT/api/admin/stats")
+          echo "/api/admin/stats tanpa kunci → $kode"
+          [ "$kode" = "401" ] || { echo "✗ endpoint admin tidak terlindungi!"; kill $SERVER_PID; exit 1; }
+
+          kill $SERVER_PID
+          echo "✓ smoke test lulus"
+
+  # -------------------------------------------------------------- jaga
+  guard:
+    name: Tidak ada rahasia / data ikut ter-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pastikan berkas terlarang tidak terlacak git
+        run: |
+          set -e
+          gagal=0
+          # Berkas yang TIDAK BOLEH ada di repo
+          for pola in ".env" "data/codes.json" "data/settings.json" "data/orders.log"; do
+            if git ls-files --error-unmatch "$pola" > /dev/null 2>&1; then
+              echo "✗ $pola ikut ter-commit — hapus dengan: git rm --cached $pola"
+              gagal=1
+            else
+              echo "✓ $pola tidak terlacak"
+            fi
+          done
+          # folder data sama sekali tidak boleh berisi berkas terlacak selain .gitkeep
+          berkasData=$(git ls-files data/ | grep -v '.gitkeep' || true)
+          if [ -n "$berkasData" ]; then
+            echo "✗ ada berkas data ikut ter-commit:"; echo "$berkasData"; gagal=1
+          fi
+          exit $gagal
+
+      - name: Cari pola rahasia di dalam kode
+        run: |
+          set -e
+          # App password Gmail = 16 huruf kecil; token refresh Google diawali 1//
+          pola='(1//[0-9A-Za-z_-]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-ant-[0-9A-Za-z_-]{20,})'
+          if git grep -nIE "$pola" -- ':!*.md' ':!package-lock.json' > /tmp/temuan.txt 2>/dev/null; then
+            echo "✗ kemungkinan rahasia tertulis di kode:"
+            cat /tmp/temuan.txt
+            exit 1
+          fi
+          echo "✓ tidak ditemukan pola rahasia"
