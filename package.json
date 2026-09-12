@@ -1,7 +1,7 @@
 {
   "name": "one-strip-clover",
   "version": "1.0.0",
-  "description": "One Strip Clover \u2014 photobox digital dengan kode akses sekali pakai",
+  "description": "One Strip Clover — photobox digital dengan kode akses sekali pakai",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,12 +9,12 @@
     "test-email": "node scripts/test-email.js",
     "auth": "node scripts/google-auth.js",
     "logs": "node scripts/show-logs.js",
-    "test": "node --test \"test/*.test.js\"",
+    "test": "node --test test/*.test.js",
     "backup": "node scripts/backup-codes.js",
     "cleanup": "node scripts/cleanup-data.js",
     "template": "node scripts/make-template.js",
     "sim": "node scripts/simulasi-browser.js",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" --test-coverage-exclude=\"backend-go/**\" --test-coverage-exclude=\"frontend-react/**\" --test-coverage-lines=85 --test-coverage-functions=85 --test-coverage-branches=70 \"test/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" --test-coverage-exclude=\"backend-go/**\" --test-coverage-exclude=\"frontend-react/**\" --test-coverage-lines=85 --test-coverage-functions=85 --test-coverage-branches=70 test/*.test.js",
     "ci": "npm test && npm run test:coverage && npm run sim"
   },
   "dependencies": {
