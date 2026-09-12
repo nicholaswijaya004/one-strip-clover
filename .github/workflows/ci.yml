@@ -66,9 +66,11 @@ jobs:
         run: npm test
 
       - name: Tes + ambang cakupan
-        # Ambang sengaja sedikit di bawah angka sekarang, supaya PR yang
-        # menurunkan cakupan secara berarti akan GAGAL, tapi perbaikan kecil
-        # tidak terhambat. Naikkan angkanya seiring cakupan membaik.
+        # --test-coverage-lines/functions/branches/exclude baru ada di Node
+        # test runner sejak rilis "Current" yang jadi Node 22 — TIDAK di-
+        # backport ke Node 20 (LTS). Node 20 tetap dites penuh lewat langkah
+        # "Jalankan tes" di atas; ambang cakupan hanya ditegakkan di Node 22+.
+        if: matrix.node >= 22
         run: npm run test:coverage
 
       - name: Simulasi browser (halaman photobox benar-benar hidup)
