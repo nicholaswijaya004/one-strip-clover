@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Strip Clover — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Montserrat:wght@600;700;800&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --clover:#AEAF4E;--clover-deep:#8E8F3A;--blush:#F9E4EB;--mint:#86F2EC;
+    --plum:#6C4862;--peri:#A9BAD6;
+    --cream:#FCFAF3;--paper:#FFFEFA;--ink:#3B2E38;--smoke:#8A7C86;
+    --line:rgba(108,72,98,.16);
+    --soot:#3B2E38;--brass:var(--clover);--safelight:var(--plum);
+    --script:'Parisienne',cursive;
+    --body:'Karla',system-ui,sans-serif;--mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(800px 380px at 15% -6%, rgba(249,228,235,.5), transparent 60%),
+      radial-gradient(700px 340px at 88% 3%, rgba(134,242,236,.28), transparent 62%),
+      var(--cream);
+    color:var(--ink);font-family:var(--body);
+    min-height:100vh;padding:30px 16px 64px;display:flex;flex-direction:column;align-items:center}
+  h1{font-family:var(--script);font-weight:400;color:var(--clover);
+    font-size:38px;line-height:1;margin-bottom:6px}
+  .sub{color:var(--smoke);font-size:13px;margin-bottom:26px;font-style:italic}
+  .card{width:100%;max-width:520px;background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:22px;margin-bottom:16px;
+    box-shadow:0 1px 2px rgba(59,46,56,.04),0 18px 38px -26px rgba(59,46,56,.3)}
+  label{display:block;font-family:'Montserrat',sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--smoke);margin-bottom:8px}
+  input{width:100%;background:#fff;border:1px solid var(--line);border-radius:11px;
+    color:var(--ink);padding:12px;font-family:var(--mono);font-size:15px}
+  input:focus{outline:2px solid var(--brass)}
+  .btn{border:0;border-radius:999px;cursor:pointer;font-weight:700;font-size:15px;
+    padding:14px 24px;font-family:var(--body);width:100%;margin-top:14px}
+  .btn-main{background:var(--clover);color:#fff;box-shadow:0 10px 22px -12px rgba(174,175,78,.9)}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--plum);font-weight:600}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  .stat{background:linear-gradient(160deg,rgba(249,228,235,.5),rgba(134,242,236,.22));
+    border:1px solid var(--line);border-radius:12px;padding:13px 6px;text-align:center}
+  .stat .n{font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--plum);line-height:1.1}
+  .stat .l{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;color:var(--smoke);margin-top:5px;line-height:1.3}
+  .codebox{background:rgba(174,175,78,.1);border:1px dashed var(--clover);color:var(--ink);border-radius:14px;padding:22px;text-align:center;margin-top:16px;display:none}
+  .codebox .c{font-family:var(--mono);font-weight:600;font-size:30px;letter-spacing:.14em}
+  .codebox .m{font-size:12px;color:var(--smoke);margin-top:6px;font-family:var(--mono)}
+  .copy{background:var(--plum);color:#fff;border:0;border-radius:999px;
+    padding:10px 22px;margin-top:14px;cursor:pointer;font-family:var(--body);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:10px}
+  th{text-align:left;color:var(--smoke);font-weight:400;font-size:10px;letter-spacing:.12em;
+    padding:6px 4px;border-bottom:1px solid var(--line)}
+  td{padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06)}
+  .pill{font-size:10px;padding:3px 8px;border-radius:999px}
+  .pill.ok{background:rgba(174,175,78,.2);color:var(--clover-deep)}
+  .pill.wait{background:rgba(169,186,214,.28);color:var(--plum)}
+  .seg2{display:flex;gap:6px;margin-bottom:10px}
+  .seg2 button{flex:1;background:#fff;border:1px solid var(--line);color:var(--smoke);
+    border-radius:999px;padding:8px;font-size:12.5px;cursor:pointer;font-family:var(--body)}
+  .seg2 button.on{background:var(--clover);color:#fff;font-weight:700;border-color:var(--clover)}
+  pre{background:#F6F3EA;border:1px solid var(--line);border-radius:11px;padding:12px;
+    font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--ink);
+    max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  /* Flex, bukan float: dengan float, gambar pratinjau tidak "menghitung"
+     tinggi kotaknya sehingga menjulur keluar seperti sebelumnya. */
+  .tplstatus{
+    display:flex;gap:14px;align-items:flex-start;
+    font-size:12.5px;line-height:1.6;color:var(--smoke);
+    background:#F6F3EA;border:1px solid var(--line);border-radius:11px;padding:14px;
+  }
+  .tplstatus b{color:var(--ink)}
+  .tplstatus.ok{background:rgba(174,175,78,.12);border-color:var(--clover)}
+  .tplstatus.warn{background:rgba(249,228,235,.8);border-color:rgba(108,72,98,.3);color:var(--plum)}
+  .tplinfo{flex:1 1 auto;min-width:0;word-break:break-word}
+  .tplgaleri{display:flex;gap:12px;flex-wrap:wrap}
+  .tplitem{cursor:pointer;text-align:center;width:64px}
+  .tplitem img{width:60px;height:auto;border-radius:7px;border:2px solid transparent;
+    box-shadow:0 4px 12px -6px rgba(59,46,56,.4);background:#fff;display:block}
+  .tplitem.dipilih img{border-color:var(--clover)}
+  .tplitem .nm{font-size:10px;color:var(--smoke);margin-top:5px;line-height:1.3;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tplitem.dipilih .nm{color:var(--clover-deep);font-weight:700}
+  .tplkosong{font-size:12.5px;color:var(--smoke);font-style:italic}
+  .tpldivider{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--smoke);
+    margin:20px 0 12px;padding-top:16px;border-top:1px dashed var(--line)}
+  .tpledit-head{display:flex;gap:14px;align-items:flex-start}
+  .btn-hapus{
+    background:#fff;border:1px solid rgba(192,82,107,.45);color:#C0526B;font-weight:600;
+  }
+  .btn-hapus.siap{background:#C0526B;border-color:#C0526B;color:#fff}
+  .btn-hapus:disabled{opacity:.4;cursor:not-allowed}
+  .tplpreview{
+    flex:0 0 auto;width:54px;height:auto;display:block;
+    border-radius:6px;border:1px solid var(--line);
+    background:#fff;
+  }
+  .setelan-item{padding:12px 0;border-bottom:1px solid var(--line)}
+  .setelan-item:last-of-type{border-bottom:0}
+  .setelan-baris{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .setelan-nama{font-size:13.5px;font-weight:700;color:var(--ink)}
+  .setelan-ket{font-size:11.5px;color:var(--smoke);line-height:1.55;margin-top:5px}
+  .setelan-baris input{width:88px;text-align:center;flex:0 0 auto}
+  .genrow{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .genrow input{width:88px;text-align:center}
+  .genhint{font-size:11.5px;color:var(--smoke);line-height:1.5;margin-bottom:12px}
+  textarea#genOut{
+    width:100%;margin-top:14px;background:#F6F3EA;border:1px solid var(--line);
+    border-radius:11px;color:var(--ink);font-family:var(--mono);font-size:12px;
+    padding:11px;resize:vertical;line-height:1.7;
+  }
+  .genactions{display:flex;gap:8px;margin-top:10px}
+  .genactions .btn{margin-top:0;font-size:13px;padding:11px 14px}
+  .msg{margin-top:12px;font-size:13px;min-height:18px}
+  .msg.err{color:#C0526B}
+  .warn{background:rgba(249,228,235,.7);border:1px solid rgba(108,72,98,.2);
+    border-radius:12px;padding:13px;font-size:12.5px;color:var(--plum);margin-top:14px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<h1>Admin Kode</h1>
+<p class="sub">Kelola kode akses One Strip Clover</p>
+
+<!-- login -->
+<div class="card" id="loginCard">
+  <label for="keyInput">Admin key</label>
+  <input type="password" id="keyInput" placeholder="isi ADMIN_KEY dari .env" autocomplete="off">
+  <button class="btn btn-main" id="loginBtn">Masuk</button>
+  <div class="msg" id="loginMsg"></div>
+</div>
+
+<!-- dashboard -->
+<div id="dash" style="display:none;width:100%;max-width:520px">
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <label>Buat kode baru</label>
+    <div class="genrow">
+      <input type="number" id="genQty" value="100" min="1" max="2000">
+      <div class="seg2" style="margin:0;flex:1">
+        <button id="genChatbot" class="on">Untuk chatbot</button>
+        <button id="genAdmin">Stok admin</button>
+      </div>
+    </div>
+    <p class="genhint" id="genHint"></p>
+    <button class="btn btn-main" id="genBtn">⚙ Generate kode</button>
+    <div class="msg" id="genMsg"></div>
+
+    <div id="genResult" style="display:none">
+      <textarea id="genOut" readonly rows="7"></textarea>
+      <div class="genactions">
+        <button class="btn btn-ghost" id="genCopy">Salin semua</button>
+        <button class="btn btn-ghost" id="genDl">⬇ Unduh .txt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="buyerInput">Nama / order ID pembeli (opsional)</label>
+    <input type="text" id="buyerInput" placeholder="cth: Shopee #123456 / Budi">
+    <button class="btn btn-main" id="nextBtn">🎟 Ambil Kode Berikutnya</button>
+    <div class="codebox" id="codebox">
+      <div class="c" id="codeOut">—</div>
+      <div class="m" id="codeMeta"></div>
+      <button class="copy" id="copyBtn">Salin kode</button>
+    </div>
+    <div class="msg" id="nextMsg"></div>
+    <div class="warn" id="lowWarn" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <label>Bingkai (template strip)</label>
+    <p class="genhint">
+      Setiap template yang kamu unggah menjadi <b>pilihan bingkai</b> di halaman
+      utama. Pembeli bisa memilih desainmu atau bingkai bawaan (Clover, Linen,
+      dst). Klik satu untuk mengatur posisi foto atau menghapusnya.
+    </p>
+
+    <div id="tplGaleri" class="tplgaleri">memuat…</div>
+
+    <div class="tpldivider">＋ Tambah template baru</div>
+    <label for="tplNama">Nama</label>
+    <input type="text" id="tplNama" placeholder="cth: Lebaran 2026 / Clover Pink" maxlength="60">
+    <p class="genhint" style="margin:8px 0 0">
+      Ukuran strip <b>56,1 x 171,5 mm</b> (rasio 1 : 3,06) — mis. <b>663 x 2026 px</b>
+      (300 dpi). Bagian kotak foto sebaiknya transparan (PNG).
+    </p>
+    <input type="file" id="tplFile" accept="image/png,image/jpeg" style="display:none">
+    <button class="btn btn-main" id="tplPilih" style="width:100%;margin-top:12px">⬆ Unggah template</button>
+    <div class="msg" id="tplMsg"></div>
+
+    <!-- panel edit satu template (muncul saat sebuah template dipilih) -->
+    <div id="tplEdit" style="display:none;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)">
+      <div class="tpledit-head">
+        <img id="tplEditImg" class="tplpreview" alt="">
+        <div class="tplinfo">
+          <label style="margin:0">Nama</label>
+          <input type="text" id="tplEditNama" maxlength="60">
+          <div id="tplEditInfo" style="font-size:11.5px;color:var(--smoke);margin-top:8px;line-height:1.6"></div>
+        </div>
+      </div>
+      <label style="margin-top:16px">Posisi kotak foto (mm)</label>
+      <div id="tplLayout"></div>
+      <div class="genactions">
+        <button class="btn btn-main" id="tplSimpan" style="flex:1">💾 Simpan</button>
+        <button class="btn btn-hapus" id="tplHapus">🗑 Hapus</button>
+      </div>
+      <div class="msg" id="tplEditMsg"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>Setelan</label>
+    <p class="genhint">Berlaku langsung — tidak perlu restart server.</p>
+    <div id="setelanList"></div>
+    <button class="btn btn-ghost" id="setelanSimpan">💾 Simpan setelan</button>
+    <div class="msg" id="setelanMsg"></div>
+  </div>
+
+  <div class="card">
+    <label>Lepas ikatan perangkat</label>
+    <p class="genhint">
+      Kode terikat ke <b>satu perangkat</b>. Kalau pembeli sah terkunci
+      (mis. menukar kode di browser dalam aplikasi TikTok lalu pindah ke Safari),
+      lepas ikatannya di sini supaya dia bisa menukar ulang di perangkat barunya.
+    </p>
+    <input type="text" id="unbindCode" placeholder="OSC-XXXXXX" style="text-transform:uppercase">
+    <button class="btn btn-ghost" id="unbindBtn">🔓 Lepas ikatan</button>
+    <div class="msg" id="unbindMsg"></div>
+  </div>
+
+  <div class="card">
+    <label>Log</label>
+    <div class="seg2">
+      <button id="logOrders" class="on">Pesanan</button>
+      <button id="logApp">Teknis</button>
+      <button id="logErr">Error</button>
+    </div>
+    <pre id="logOut">memuat…</pre>
+  </div>
+
+  <div class="card">
+    <label>10 kode terakhir dibagikan</label>
+    <table>
+      <thead><tr><th>Kode</th><th>Pembeli</th><th>Status</th></tr></thead>
+      <tbody id="recentBody"></tbody>
+    </table>
+    <button class="btn btn-ghost" id="refreshBtn">↻ Refresh</button>
+  </div>
+</div>
+
+<script>
+const $=(id)=>document.getElementById(id);
+let KEY="";
+
+async function api(path, body){
+  const r=await fetch(path,{method:"POST",
+    headers:{"Content-Type":"application/json","x-admin-key":KEY},
+    body:JSON.stringify(body||{})});
+  return {status:r.status, data:await r.json()};
+}
+
+$("loginBtn").onclick=async ()=>{
+  KEY=$("keyInput").value.trim();
+  if(!KEY){ $("loginMsg").textContent="Isi admin key dulu."; $("loginMsg").className="msg err"; return; }
+  const {status,data}=await api("/api/admin/stats");
+  if(status===401){ $("loginMsg").textContent="Admin key salah."; $("loginMsg").className="msg err"; return; }
+  if(!data.ok){ $("loginMsg").textContent="Gagal terhubung ke server."; $("loginMsg").className="msg err"; return; }
+  sessionStorage.setItem("fbkey",KEY);
+  $("loginCard").style.display="none";
+  $("dash").style.display="block";
+  render(data);
+  loadLogs("orders");
+  muatSetelan();
+  muatTpl();
+};
+$("keyInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("loginBtn").click(); });
+
+function render(data){
+  const s=data.stats;
+  $("stats").innerHTML=`
+    <div class="stat" title="Sudah diekspor ke pool chatbot, belum ditukar pembeli"><div class="n">${s.chatbotStock??0}</div><div class="l">STOK<br>CHATBOT</div></div>
+    <div class="stat" title="Siap dibagikan manual lewat tombol Ambil Kode Berikutnya"><div class="n">${s.available}</div><div class="l">STOK<br>ADMIN</div></div>
+    <div class="stat" title="Sudah ditukar pembeli di website"><div class="n">${s.redeemed}</div><div class="l">DIPAKAI</div></div>
+    <div class="stat" title="Seluruh kode yang pernah dibuat"><div class="n">${s.total}</div><div class="l">TOTAL</div></div>`;
+
+  const warns=[];
+  const cb = s.chatbotStock ?? 0;
+  if(cb === 0)
+    warns.push(`🛑 <b>Stok chatbot habis.</b> Pembeli baru tidak akan dapat kode. Buat kode baru dengan pilihan <b>Untuk chatbot</b>, lalu upload ke pool chatbot.`);
+  else if(cb < 25)
+    warns.push(`⚠️ Stok chatbot tinggal <b>${cb}</b>. Siapkan batch baru sebelum habis.`);
+
+  if(s.available === 0)
+    warns.push(`ℹ️ Stok admin kosong — tombol “Ambil Kode Berikutnya” belum bisa dipakai. Ini hanya perlu kalau kamu membagi kode manual (DM/WA, kode pengganti).`);
+  else if(s.available < 10)
+    warns.push(`ℹ️ Stok admin tinggal <b>${s.available}</b> kode.`);
+
+  const q = data.queue || {};
+  if((q.menunggu||0) > 0)
+    warns.push(`📦 <b>${q.menunggu} pesanan tertunda</b> — pengiriman ke email/Drive gagal, sedang dicoba ulang otomatis. Cek tab Error kalau tidak berkurang.`);
+  if((q.gagalPermanen||0) > 0)
+    warns.push(`🛑 <b>${q.gagalPermanen} pesanan GAGAL PERMANEN</b> — fotonya ada di <code>data/failed/</code>, proses manual.`);
+
+  $("lowWarn").style.display = warns.length ? "block":"none";
+  $("lowWarn").innerHTML = warns.join("<br><br>");
+
+  $("recentBody").innerHTML = (data.recent||[]).map(r=>`
+    <tr>
+      <td>${r.code}</td>
+      <td>${r.buyer==="(batch chatbot)" ? "<i>batch chatbot</i>" : (r.buyer? r.buyer.replace(/[<>]/g,"") : "—")}</td>
+      <td><span class="pill ${r.used?"ok":"wait"}">${r.used?"dipakai":"belum"}</span></td>
+    </tr>`).join("") || `<tr><td colspan="3" style="color:var(--smoke)">Belum ada</td></tr>`;
+}
+
+async function refresh(){
+  const {data}=await api("/api/admin/stats");
+  if(data.ok) render(data);
+}
+$("refreshBtn").onclick=()=>{refresh();loadLogs(logMode);};
+
+let logMode="orders";
+async function loadLogs(which){
+  logMode=which;
+  ["logOrders","logApp","logErr"].forEach(id=>$(id).classList.remove("on"));
+  $(which==="orders"?"logOrders":which==="app"?"logApp":"logErr").classList.add("on");
+  const {data}=await api("/api/admin/logs",{which:which==="orders"?"orders":"app",n:150});
+  if(!data.ok){ $("logOut").textContent="(gagal memuat log)"; return; }
+  let lines=data.lines;
+  if(which==="err") lines=lines.filter(l=>l.includes("[ERROR]"));
+  $("logOut").textContent = lines.slice(-120).join("\n") || "(kosong)";
+  $("logOut").scrollTop=$("logOut").scrollHeight;
+}
+$("logOrders").onclick=()=>loadLogs("orders");
+$("logApp").onclick=()=>loadLogs("app");
+$("logErr").onclick=()=>loadLogs("err");
+
+/* ------------------------- template strip ------------------------- */
+const TPL_FIELDS = {
+  photoWmm: "Lebar foto",
+  photoHmm: "Tinggi foto",
+  topMm:    "Jarak dari atas",
+  gapMm:    "Jarak antar foto",
+};
+let tplItems = [];       // daftar template dari server
+let tplDipilih = null;   // id template yang sedang diedit
+
+async function muatTpl(){
+  const r = await fetch("/api/template");   // endpoint publik: daftar ringkas
+  const d = await r.json();
+  // ambil detail lengkap (termasuk layout & status muat) lewat endpoint admin
+  const {data} = await api("/api/admin/template",{baca:true});
+  tplItems = (data && data.items) ? data.items : (d.items||[]);
+  renderGaleri();
+}
+
+function renderGaleri(){
+  const g=$("tplGaleri");
+  if(tplItems.length===0){
+    g.innerHTML='<div class="tplkosong">Belum ada template. Unggah di bawah — '+
+      'strip memakai desain bawaan sampai kamu menambah satu.</div>';
+  }else{
+    g.innerHTML = tplItems.map(t=>`
+      <div class="tplitem ${t.id===tplDipilih?"dipilih":""}" data-id="${t.id}">
+        <img src="/api/template/image?id=${t.id}&v=${encodeURIComponent(t.diunggahPada||"")}" alt="${(t.nama||"").replace(/[<>]/g,"")}">
+        <div class="nm" title="${(t.nama||"").replace(/[<>]/g,"")}">${(t.nama||"").replace(/[<>]/g,"")}</div>
+      </div>`).join("");
+    g.querySelectorAll(".tplitem").forEach(el=>{
+      el.onclick=()=>pilihTpl(el.dataset.id);
+    });
+  }
+  // kalau template yang sedang diedit sudah terhapus, tutup panel
+  if(tplDipilih && !tplItems.find(t=>t.id===tplDipilih)){ tplDipilih=null; $("tplEdit").style.display="none"; }
+}
+
+function pilihTpl(id){
+  tplDipilih=id;
+  const t=tplItems.find(x=>x.id===id);
+  if(!t) return;
+  renderGaleri();
+
+  $("tplEdit").style.display="block";
+  $("tplEditImg").src="/api/template/image?id="+id+"&v="+encodeURIComponent(t.diunggahPada||"");
+  $("tplEditNama").value=t.nama||"";
+
+  const muat = t.muat!==false;
+  $("tplEditInfo").innerHTML =
+    (t.lebarPx?`Ukuran: ${t.lebarPx} x ${t.tinggiPx} px<br>`:"") +
+    (t.diunggahPada?`Diunggah: ${new Date(t.diunggahPada).toLocaleString("id-ID")}<br>`:"") +
+    (muat ? `Margin samping ${t.marginSampingMm} mm · sisa bawah ${t.sisaBawahMm} mm`
+          : `<b style="color:#C0526B">⚠️ Kotak foto tidak muat (kelebihan ${Math.abs(t.sisaBawahMm)} mm)</b>`);
+
+  $("tplLayout").innerHTML = Object.entries(TPL_FIELDS).map(([k,label])=>`
+    <div class="setelan-item">
+      <div class="setelan-baris">
+        <span class="setelan-nama">${label}</span>
+        <input type="number" id="tpl-${k}" value="${(t.layout||{})[k]}" step="0.1" min="0">
+      </div>
+    </div>`).join("");
+}
+
+$("tplPilih").onclick=()=>$("tplFile").click();
+
+$("tplFile").onchange=async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const m=$("tplMsg"); m.className="msg"; m.textContent="Membaca berkas…";
+
+  const dataUrl=await new Promise(res=>{
+    const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);
+  });
+  const img=await new Promise((res)=>{
+    const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=dataUrl;
+  });
+  if(!img){ m.textContent="Berkas gambar tidak terbaca."; m.classList.add("err"); e.target.value=""; return; }
+
+  const rasio=img.naturalHeight/img.naturalWidth, target=171.5/56.1;
+  if(Math.abs(rasio-target)/target > 0.03){
+    m.innerHTML=`Rasio gambar <b>1 : ${rasio.toFixed(2)}</b> tidak cocok. `+
+      `Strip harus <b>1 : ${target.toFixed(2)}</b> (mis. 663 x 2026 px).`;
+    m.classList.add("err"); e.target.value=""; return;
+  }
+
+  m.textContent="Mengunggah…";
+  const {data}=await api("/api/admin/template",{
+    image:dataUrl, lebarPx:img.naturalWidth, tinggiPx:img.naturalHeight,
+    nama:$("tplNama").value.trim(),
+  });
+  e.target.value="";
+  if(data.ok){
+    tplItems=data.items||[];
+    $("tplNama").value="";
+    m.textContent="✓ Template ditambahkan. Muncul sebagai bingkai baru di halaman utama.";
+    m.style.color="#7fd18a";
+    renderGaleri();
+    if(data.baru) pilihTpl(data.baru);
+  }else{
+    m.textContent="Gagal: "+(data.hint||data.error); m.classList.add("err");
+  }
+};
+
+$("tplSimpan").onclick=async ()=>{
+  if(!tplDipilih) return;
+  const m=$("tplEditMsg"); m.className="msg";
+  const layout={};
+  for(const k of Object.keys(TPL_FIELDS)){ const el=$("tpl-"+k); if(el) layout[k]=Number(el.value); }
+  const {data}=await api("/api/admin/template",{
+    ubah:{ id:tplDipilih, nama:$("tplEditNama").value.trim(), layout },
+  });
+  if(data.ok){
+    tplItems=data.items||[];
+    const t=tplItems.find(x=>x.id===tplDipilih);
+    m.textContent = (t && t.muat===false)
+      ? "Disimpan, TAPI kotak foto tidak muat — perbaiki angkanya."
+      : "✓ Tersimpan.";
+    m.style.color = (t && t.muat===false) ? "" : "#7fd18a";
+    if(t && t.muat===false) m.classList.add("err");
+    renderGaleri();
+  }else{ m.textContent="Gagal menyimpan."; m.classList.add("err"); }
+};
+
+/* Hapus butuh dua ketukan */
+let hapusSiap=false, hapusTimer;
+$("tplHapus").onclick=async ()=>{
+  if(!tplDipilih) return;
+  const m=$("tplEditMsg"); m.className="msg";
+  const tombol=$("tplHapus");
+
+  if(!hapusSiap){
+    hapusSiap=true;
+    tombol.textContent="⚠️ Yakin? Ketuk lagi";
+    tombol.classList.add("siap");
+    clearTimeout(hapusTimer);
+    hapusTimer=setTimeout(()=>{ hapusSiap=false; tombol.textContent="🗑 Hapus"; tombol.classList.remove("siap"); },3500);
+    return;
+  }
+  clearTimeout(hapusTimer); hapusSiap=false;
+  tombol.textContent="🗑 Hapus"; tombol.classList.remove("siap"); tombol.disabled=true;
+
+  const {data}=await api("/api/admin/template",{hapus:tplDipilih});
+  tombol.disabled=false;
+  if(data.ok){
+    tplItems=data.items||[];
+    tplDipilih=null;
+    $("tplEdit").style.display="none";
+    renderGaleri();
+    m.textContent="Template dihapus. Bingkai itu hilang dari halaman utama.";
+  }else{ m.textContent="Gagal menghapus."; m.classList.add("err"); }
+};
+
+/* ---------------------------- setelan ---------------------------- */
+let skemaSetelan = {};
+
+async function muatSetelan(){
+  const {data}=await api("/api/admin/settings",{});
+  if(!data.ok) return;
+  skemaSetelan = data.skema || {};
+  $("setelanList").innerHTML = Object.entries(skemaSetelan).map(([kunci,def])=>`
+    <div class="setelan-item">
+      <div class="setelan-baris">
+        <span class="setelan-nama">${def.label}</span>
+        <input type="number" id="set-${kunci}" value="${data.settings[kunci]}"
+               min="${def.min}" max="${def.max}" step="${def.min < 1 ? "0.5" : "1"}">
+      </div>
+      <div class="setelan-ket">${def.keterangan} <b>(${def.min}–${def.max})</b></div>
+    </div>`).join("");
+}
+
+$("setelanSimpan").onclick=async ()=>{
+  const m=$("setelanMsg"); m.className="msg";
+  const update={};
+  for(const kunci of Object.keys(skemaSetelan)){
+    const el=$("set-"+kunci);
+    if(el) update[kunci]=Number(el.value);
+  }
+  $("setelanSimpan").disabled=true;
+  const {data}=await api("/api/admin/settings",{update});
+  $("setelanSimpan").disabled=false;
+
+  if(data.ok){
+    // server membatasi nilainya — tampilkan hasil sebenarnya, bukan yang diketik
+    for(const [k,v] of Object.entries(data.settings)){
+      const el=$("set-"+k); if(el) el.value=v;
+    }
+    m.textContent="✓ Setelan disimpan & langsung berlaku.";
+    m.style.color="#7fd18a";
+  }else{
+    m.textContent="Gagal menyimpan."; m.classList.add("err");
+  }
+};
+
+/* ------------------ lepas ikatan perangkat ------------------ */
+$("unbindBtn").onclick=async ()=>{
+  const kode=$("unbindCode").value.trim().toUpperCase();
+  const m=$("unbindMsg"); m.className="msg";
+  if(!kode){ m.textContent="Isi kodenya dulu."; m.classList.add("err"); return; }
+
+  $("unbindBtn").disabled=true;
+  const {data}=await api("/api/admin/unbind",{code:kode});
+  $("unbindBtn").disabled=false;
+
+  if(data.ok){
+    m.textContent=`✓ ${kode} dilepas. Pembeli bisa menukar ulang di perangkat barunya.`;
+    m.style.color="#7fd18a";
+    $("unbindCode").value="";
+    refresh();
+  }else if(data.error==="SPENT"){
+    m.innerHTML=`Kode ini sudah dipakai untuk pesanan <b>${data.ref||"-"}</b>, jadi memang sudah selesai.`;
+    m.classList.add("err");
+  }else if(data.error==="INVALID"){
+    m.textContent="Kode tidak ditemukan."; m.classList.add("err");
+  }else{
+    m.textContent="Gagal: "+(data.error||"unknown"); m.classList.add("err");
+  }
+};
+
+/* ---------------------- generator kode ---------------------- */
+let genForChatbot=true, lastBatch=[];
+function renderGenMode(){
+  $("genChatbot").classList.toggle("on",genForChatbot);
+  $("genAdmin").classList.toggle("on",!genForChatbot);
+  $("genHint").innerHTML = genForChatbot
+    ? "Kode langsung ditandai <b>sudah dibagikan</b>, jadi tombol “Ambil Kode Berikutnya” tidak akan membagikan kode yang sama. Upload hasilnya ke pool chatbot."
+    : "Kode masuk <b>stok /admin</b> dan bisa dibagikan satu per satu lewat tombol di bawah. Untuk order manual (DM, WhatsApp) atau kode pengganti.";
+}
+$("genChatbot").onclick=()=>{genForChatbot=true;renderGenMode();};
+$("genAdmin").onclick=()=>{genForChatbot=false;renderGenMode();};
+renderGenMode();
+
+$("genBtn").onclick=async ()=>{
+  const n=Number($("genQty").value);
+  const m=$("genMsg"); m.className="msg";
+  if(!n||n<1||n>2000){ m.textContent="Jumlah harus 1–2000."; m.classList.add("err"); return; }
+
+  $("genBtn").disabled=true; $("genBtn").textContent="Membuat…";
+  const {data}=await api("/api/admin/generate",{n,forChatbot:genForChatbot});
+  $("genBtn").disabled=false; $("genBtn").textContent="⚙ Generate kode";
+
+  if(data.ok){
+    lastBatch=data.codes;
+    $("genOut").value=data.codes.join("\n");
+    $("genResult").style.display="block";
+    m.textContent=`✓ ${data.codes.length} kode dibuat (${data.forChatbot?"pool chatbot":"stok admin"}).`;
+    m.style.color="#7fd18a";
+    render({stats:data.stats,recent:null}); refresh();
+  }else{
+    m.textContent="Gagal: "+(data.hint||data.msg||data.error||"unknown");
+    m.classList.add("err");
+  }
+};
+
+$("genCopy").onclick=async ()=>{
+  try{ await navigator.clipboard.writeText($("genOut").value);
+    $("genCopy").textContent="Tersalin ✓";
+    setTimeout(()=>$("genCopy").textContent="Salin semua",1500);
+  }catch(e){ $("genOut").select(); }
+};
+
+$("genDl").onclick=()=>{
+  const blob=new Blob([$("genOut").value],{type:"text/plain"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`batch-${genForChatbot?"chatbot":"admin"}-${new Date().toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+
+$("nextBtn").onclick=async ()=>{
+  $("nextBtn").disabled=true;
+  $("nextMsg").textContent="";
+  const buyer=$("buyerInput").value.trim();
+  const {data}=await api("/api/admin/next-code",{buyer});
+  if(data.ok){
+    $("codebox").style.display="block";
+    $("codeOut").textContent=data.code;
+    $("codeMeta").textContent=`sisa stok: ${data.remaining}`;
+    $("buyerInput").value="";
+    render({stats:data.stats,recent:null});
+    refresh();
+  }else if(data.error==="OUT_OF_STOCK"){
+    $("nextMsg").textContent="Stok kode habis. "+data.hint;
+    $("nextMsg").className="msg err";
+  }else{
+    $("nextMsg").textContent="Gagal: "+(data.error||"unknown");
+    $("nextMsg").className="msg err";
+  }
+  $("nextBtn").disabled=false;
+};
+
+$("copyBtn").onclick=async ()=>{
+  try{ await navigator.clipboard.writeText($("codeOut").textContent);
+    $("copyBtn").textContent="Tersalin ✓";
+    setTimeout(()=>$("copyBtn").textContent="Salin kode",1500);
+  }catch(e){ $("copyBtn").textContent="Salin manual"; }
+};
+
+// auto-login kalau key masih ada di session
+const saved=sessionStorage.getItem("fbkey");
+if(saved){ $("keyInput").value=saved; $("loginBtn").click(); }
+</script>
+</body>
+</html>

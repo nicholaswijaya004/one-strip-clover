@@ -1,0 +1,30 @@
+{
+  "name": "one-strip-clover",
+  "version": "1.0.0",
+  "description": "One Strip Clover \u2014 photobox digital dengan kode akses sekali pakai",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "codes": "node scripts/generate-codes.js",
+    "test-email": "node scripts/test-email.js",
+    "auth": "node scripts/google-auth.js",
+    "logs": "node scripts/show-logs.js",
+    "test": "node --test \"test/*.test.js\"",
+    "backup": "node scripts/backup-codes.js",
+    "cleanup": "node scripts/cleanup-data.js",
+    "template": "node scripts/make-template.js",
+    "sim": "node scripts/simulasi-browser.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.0",
+    "nodemailer": "^6.9.13"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "@napi-rs/canvas": "^0.1.65"
+  }
+}

@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Strip Clover — photobox digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="/shared/strip-renderer.js"></script>
+<script>
+  // Kalau modul bersama gagal dimuat (mis. browser memakai versi lama dari
+  // cache), halaman akan rusak sebagian tanpa pesan. Ini membuatnya terlihat.
+  window.__oscSiap = !!(window.StripRenderer && window.StripRenderer.LAYOUT_BAWAAN);
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Montserrat:wght@600;700;800&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ——— palet resmi dari company profile ——— */
+    --clover:#AEAF4E;        /* olive — warna utama brand */
+    --clover-deep:#8E8F3A;   /* olive gelap untuk teks di atas krem */
+    --blush:#F9E4EB;         /* pink pucat */
+    --mint:#86F2EC;          /* mint */
+    --plum:#6C4862;          /* plum — teks utama & aksen dalam */
+    --peri:#A9BAD6;          /* periwinkle */
+
+    /* ——— netral turunan ——— */
+    --cream:#FCFAF3;         /* latar utama */
+    --paper:#FFFEFA;         /* kartu */
+    --ink:#3B2E38;           /* teks utama (plum sangat gelap) */
+    --muted:#8A7C86;         /* teks sekunder */
+    --line:rgba(108,72,98,.14);
+    --line-strong:rgba(108,72,98,.28);
+
+    --radius:18px;
+    --script:'Parisienne',cursive;
+    --display:'Montserrat',system-ui,sans-serif;
+    --body:'Karla',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:
+      radial-gradient(900px 420px at 12% -8%, rgba(249,228,235,.55), transparent 60%),
+      radial-gradient(760px 380px at 92% 4%, rgba(134,242,236,.32), transparent 62%),
+      radial-gradient(700px 520px at 50% 108%, rgba(169,186,214,.30), transparent 60%),
+      var(--cream);
+    color:var(--ink);
+    font-family:var(--body);
+    min-height:100vh;
+    display:flex;flex-direction:column;align-items:center;
+    padding:0 18px 70px;
+  }
+
+  /* ---------------- header / wordmark ---------------- */
+  header{width:100%;max-width:560px;text-align:center;padding:44px 0 26px}
+  .wordmark{position:relative;display:inline-block}
+  .wordmark .script{
+    font-family:var(--script);
+    font-size:clamp(46px,12vw,66px);
+    color:var(--clover);
+    line-height:.9;
+    display:block;
+  }
+  .wordmark .sub{
+    font-family:var(--display);
+    font-weight:800;
+    font-size:clamp(11px,2.6vw,13px);
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:var(--plum);
+    margin-top:12px;
+  }
+  .clover-mark{
+    display:block;width:30px;height:30px;margin:0 auto 8px;
+    opacity:.9;
+  }
+  .tagline{
+    margin:20px auto 0;color:var(--muted);font-size:13.5px;line-height:1.6;
+    max-width:31ch;font-style:italic;
+  }
+  .badge{
+    display:none;margin:18px auto 0;width:max-content;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+    color:#fff;background:var(--clover);border-radius:999px;padding:7px 16px;
+  }
+
+  /* ---------------- booth card ---------------- */
+  main{width:100%;max-width:560px}
+  .booth{
+    border-radius:var(--radius);
+    background:var(--paper);
+    border:1px solid var(--line);
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(59,46,56,.04), 0 22px 46px -24px rgba(59,46,56,.28);
+  }
+  .viewport{position:relative;background:#E9E4DC;aspect-ratio:4/3;overflow:hidden}
+  video,#stageImg{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+  .rec{
+    position:absolute;top:14px;left:16px;z-index:4;display:flex;gap:7px;align-items:center;
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:#fff;
+    background:rgba(59,46,56,.42);backdrop-filter:blur(6px);
+    padding:6px 11px;border-radius:999px;
+  }
+  .rec .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .3s}
+  .rec.live .dot{background:var(--mint);box-shadow:0 0 8px var(--mint)}
+  .shots{
+    position:absolute;top:14px;right:16px;z-index:4;
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:#fff;
+    background:rgba(59,46,56,.42);backdrop-filter:blur(6px);
+    padding:6px 11px;border-radius:999px;
+  }
+  .countdown{
+    position:absolute;inset:0;z-index:5;display:none;place-items:center;
+    font-family:var(--script);font-size:120px;color:#fff;
+    text-shadow:0 6px 30px rgba(59,46,56,.45);
+  }
+  .flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:6;pointer-events:none}
+  .flash.on{animation:flash .35s ease-out}
+  @keyframes flash{0%{opacity:.95}100%{opacity:0}}
+  .lens-msg{
+    position:absolute;inset:0;z-index:2;display:grid;place-items:center;text-align:center;
+    color:var(--muted);padding:0 34px;font-size:14.5px;line-height:1.65;
+    background:linear-gradient(160deg,rgba(249,228,235,.5),rgba(169,186,214,.28));
+  }
+  .lens-msg b{color:var(--plum)}
+
+  /* ---------------- control panel ---------------- */
+  .panel{padding:22px 20px 24px;border-top:1px solid var(--line)}
+  .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .row + .row{margin-top:20px}
+  .label{
+    font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.26em;
+    color:var(--muted);text-transform:uppercase;width:100%;text-align:center;margin-bottom:9px;
+  }
+
+  .seg{display:flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden;background:#fff}
+  .seg button{
+    background:transparent;border:0;color:var(--muted);cursor:pointer;
+    padding:9px 17px;font-family:var(--body);font-size:13px;font-weight:600;
+  }
+  .seg button.on{background:var(--clover);color:#fff}
+
+  .framestrip{
+    display:flex;gap:11px;overflow-x:auto;padding:4px 2px 8px;width:100%;
+    scrollbar-width:thin;-webkit-overflow-scrolling:touch;
+  }
+  .framestrip::-webkit-scrollbar{height:5px}
+  .framestrip::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px}
+  .fthumb{
+    flex:0 0 auto;background:transparent;border:0;padding:0;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:6px;width:58px;
+  }
+  .fthumb img{
+    width:54px;height:76px;border-radius:8px;display:block;
+    border:2px solid transparent;transition:border-color .15s, transform .12s;
+    box-shadow:0 4px 12px -6px rgba(59,46,56,.4);
+  }
+  .fthumb.on img{border-color:var(--clover);transform:translateY(-3px)}
+  .fthumb .fname{
+    font-family:var(--mono);font-size:9px;color:var(--muted);
+    text-align:center;line-height:1.3;
+  }
+  .fthumb.on .fname{color:var(--clover-deep);font-weight:600}
+  .fthumb .lock{color:var(--plum)}
+
+  .btn{
+    border:0;border-radius:999px;cursor:pointer;font-family:var(--body);
+    font-weight:700;font-size:15px;padding:14px 26px;transition:transform .08s, box-shadow .15s;
+  }
+  .btn:active{transform:scale(.975)}
+  .btn-start{
+    background:var(--clover);color:#fff;padding:16px 36px;letter-spacing:.03em;
+    box-shadow:0 10px 24px -12px rgba(174,175,78,.9);
+  }
+  .btn-start:hover{box-shadow:0 12px 28px -12px rgba(174,175,78,1)}
+  .btn-ghost{background:#fff;border:1px solid var(--line-strong);color:var(--plum);font-weight:600}
+  .btn-brass{background:var(--plum);color:#fff}
+  .btn-cancel{background:#fff;border:1px solid var(--line-strong);color:var(--plum);font-weight:600;font-size:13.5px;padding:12px 22px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  input[type=file]{display:none}
+
+  .howto{
+    display:flex;gap:18px;justify-content:center;flex-wrap:wrap;
+    margin:18px 0 4px;padding-top:16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--muted);line-height:1.6;
+  }
+  .howto span{display:flex;align-items:center;gap:6px}
+  .howto b{
+    color:var(--clover-deep);font-weight:700;
+    background:rgba(174,175,78,.14);border-radius:50%;
+    width:17px;height:17px;display:grid;place-items:center;font-size:9.5px;
+  }
+  .howto + .row{margin-top:20px}
+
+  /* ---------------- hasil strip ---------------- */
+  .slot-wrap{display:none;margin-top:30px;text-align:center}
+  .slot{
+    width:min(300px,80%);height:14px;margin:0 auto;border-radius:99px;
+    background:linear-gradient(180deg,#EAE4DA,#DAD2C6);
+    border:1px solid var(--line);position:relative;z-index:2;
+  }
+  .strip-holder{overflow:hidden;margin:-4px auto 0;width:min(300px,80%)}
+  #stripImg{
+    width:100%;display:block;border-radius:0 0 10px 10px;
+    box-shadow:0 22px 44px -20px rgba(59,46,56,.5);
+    transform:translateY(-100%);
+  }
+  #stripImg.printed{animation:printOut 2.4s cubic-bezier(.25,.9,.3,1) forwards}
+  @keyframes printOut{to{transform:translateY(0)}}
+  @media (prefers-reduced-motion:reduce){
+    #stripImg.printed{animation:none;transform:none}
+    .flash.on{animation:none}
+  }
+  .actions{margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .hint{margin-top:14px;font-size:13px;color:var(--muted);line-height:1.6}
+  .hint a{color:var(--clover-deep);font-weight:600}
+
+  /* ---------------- modal ---------------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(59,46,56,.42);backdrop-filter:blur(3px);
+    display:none;place-items:center;z-index:50;padding:18px;
+  }
+  .overlay.open{display:grid}
+  .ticket{
+    width:100%;max-width:410px;background:var(--paper);color:var(--ink);
+    border-radius:20px;position:relative;padding:28px 26px;
+    max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    border:1px solid var(--line);
+    box-shadow:0 30px 70px -30px rgba(59,46,56,.6);
+  }
+  .ticket::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:5px;
+    border-radius:20px 20px 0 0;
+    background:linear-gradient(90deg,var(--clover),var(--mint),var(--blush),var(--peri),var(--plum));
+  }
+  .ticket h2{
+    font-family:var(--script);font-weight:400;font-size:34px;
+    color:var(--clover);margin-bottom:6px;line-height:1;
+  }
+  .ticket p{font-size:13.5px;line-height:1.65;color:var(--muted)}
+  .ticket .field{margin-top:16px}
+  .ticket label{
+    display:block;font-family:var(--display);font-size:9.5px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;
+  }
+  .ticket input[type=text],.ticket input[type=password],.ticket input[type=number],.ticket textarea{
+    width:100%;border:1px solid var(--line-strong);border-radius:11px;background:#fff;
+    padding:12px 13px;font-family:var(--body);font-size:15px;color:var(--ink);
+  }
+  .ticket textarea{font-size:14px;line-height:1.55}
+  .ticket input:focus,.ticket textarea:focus{outline:2px solid var(--clover);border-color:transparent}
+  .ticket .code-input{
+    text-transform:uppercase;letter-spacing:.18em;text-align:center;font-size:18px;
+    font-family:var(--mono);font-weight:600;
+  }
+  .ticket .msg{margin-top:11px;font-size:13px;min-height:18px;line-height:1.5}
+  .ticket .msg.err{color:#C0526B} .ticket .msg.okk{color:var(--clover-deep)}
+  .ticket .btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+  .ticket .btn{padding:12px 22px;font-size:14px}
+  .btn-red{background:var(--plum);color:#fff}
+
+  .finalwarn{
+    margin-top:18px;padding:13px 15px;border-radius:12px;
+    background:rgba(249,228,235,.75);border:1px solid rgba(108,72,98,.22);
+    font-size:12.5px;line-height:1.6;color:var(--plum);
+  }
+  .finalwarn b{display:block;margin-bottom:3px}
+  .consent{
+    display:flex;gap:11px;align-items:flex-start;margin-top:12px;
+    font-family:var(--body) !important;text-transform:none !important;
+    letter-spacing:normal !important;
+    font-size:12.5px;line-height:1.6;color:var(--muted);
+    background:rgba(169,186,214,.14);padding:13px 14px;border-radius:12px;
+  }
+  .consent input{margin-top:3px;accent-color:var(--clover);flex:0 0 auto}
+
+  /* ---------------- kotak beli kode ---------------- */
+  .buybox{
+    margin-top:20px;padding:18px;border-radius:14px;
+    background:linear-gradient(150deg,rgba(249,228,235,.6),rgba(134,242,236,.28));
+    border:1px solid var(--line);
+  }
+  .buytitle{
+    font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--plum);margin-bottom:12px;
+  }
+  .benefits{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:9px}
+  .benefits li{font-size:13px;line-height:1.45;color:var(--ink);padding-left:25px;position:relative}
+  .benefits li::before{
+    content:"🍀";position:absolute;left:0;top:-1px;font-size:12px;
+  }
+  .price{font-family:var(--display);font-weight:800;font-size:26px;color:var(--plum);line-height:1;margin-bottom:14px}
+  .price small{
+    display:block;font-family:var(--body);font-size:11px;color:var(--muted);
+    font-weight:400;margin-top:6px;letter-spacing:0;
+  }
+  .shoplinks{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .shoplinks a{
+    text-align:center;text-decoration:none;background:var(--plum);color:#fff;
+    border-radius:11px;padding:12px 8px;font-size:12.5px;font-weight:700;
+  }
+  .shoplinks a:active{opacity:.85}
+  .shoplinks a.wa{background:var(--clover)}
+  .shoplinks a.wide{grid-column:1 / -1}
+
+  /* ---------------- konfirmasi pesanan ---------------- */
+  .donetick{
+    width:60px;height:60px;border-radius:50%;background:var(--clover);color:#fff;
+    display:grid;place-items:center;font-size:30px;margin:6px auto 16px;
+    box-shadow:0 12px 26px -12px rgba(174,175,78,.9);
+  }
+  .refbox{
+    background:rgba(174,175,78,.1);border:1px dashed var(--clover);border-radius:14px;
+    padding:16px;text-align:center;margin-top:16px;
+  }
+  .refno{
+    font-family:var(--mono);font-weight:600;font-size:19px;letter-spacing:.05em;
+    color:var(--plum);word-break:break-all;
+  }
+  .copyref{
+    margin-top:10px;background:var(--plum);color:#fff;border:0;border-radius:999px;
+    padding:9px 20px;font-family:var(--body);font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .summary{margin-top:16px;font-size:12.5px;line-height:1.7;color:var(--ink)}
+  .summary div{display:flex;gap:10px}
+  .summary span:first-child{color:var(--muted);min-width:76px;flex:0 0 76px}
+  .nextsteps{
+    margin-top:16px;font-size:12.5px;color:var(--ink);background:rgba(169,186,214,.16);
+    border-radius:12px;padding:14px 16px;line-height:1.7;
+  }
+  .nextsteps ol{margin:7px 0 0 18px;padding:0}
+  .nextsteps li{margin-bottom:4px}
+
+  /* ---------------- progress & toast ---------------- */
+  .progwrap{margin-top:16px;display:none}
+  .progbar{height:7px;background:rgba(108,72,98,.12);border-radius:999px;overflow:hidden}
+  .progfill{height:100%;width:0%;background:linear-gradient(90deg,var(--clover),var(--mint));transition:width .25s ease}
+  .progtext{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px;text-align:center}
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;
+    background:var(--plum);color:#fff;border-radius:14px;
+    padding:15px 19px;font-size:13.5px;line-height:1.55;
+    max-width:min(340px,88vw);text-align:center;display:none;
+    box-shadow:0 20px 44px -18px rgba(59,46,56,.8);
+  }
+  .toast.show{display:block;animation:pop .3s ease}
+  @keyframes pop{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+
+  footer{
+    margin-top:52px;color:var(--muted);font-size:11.5px;text-align:center;
+    font-family:var(--mono);letter-spacing:.05em;line-height:1.8;
+  }
+  footer .fscript{font-family:var(--script);font-size:20px;color:var(--clover);letter-spacing:0}
+
+  :is(button,a,input,textarea):focus-visible{outline:2.5px solid var(--clover);outline-offset:2px}
+
+  @media (max-width:560px){
+    body{padding-left:14px;padding-right:14px}
+    .viewport{aspect-ratio:1/1}
+    .panel{padding:18px 14px 20px}
+    header{padding:34px 0 22px}
+    .tagline{margin-top:18px;font-size:13px}
+    .howto{gap:13px;font-size:9.5px;margin-top:16px;padding-top:14px}
+    .fthumb{width:54px}
+    .fthumb img{width:50px;height:70px}
+    .ticket{padding:24px 20px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="/" style="text-decoration:none;display:inline-block" title="Kembali ke halaman depan">
+    <svg class="clover-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <g fill="#AEAF4E">
+        <path d="M20 19c-2.6-3-7.5-4.4-9.6-2.3-2 2 -.8 6.6 2.4 8 2.6 1.1 5.8.3 7.2-1.4z" opacity=".95"/>
+        <path d="M20 19c3-2.6 4.4-7.5 2.3-9.6-2-2-6.6-.8-8 2.4-1.1 2.6-.3 5.8 1.4 7.2z" opacity=".85"/>
+        <path d="M20 19c2.6 3 7.5 4.4 9.6 2.3 2-2 .8-6.6-2.4-8-2.6-1.1-5.8-.3-7.2 1.4z" opacity=".9"/>
+        <path d="M20 19c-3 2.6-4.4 7.5-2.3 9.6 2 2 6.6.8 8-2.4 1.1-2.6.3-5.8-1.4-7.2z" opacity=".8"/>
+      </g>
+      <path d="M20 21c1.5 4 1.8 8 1.4 12" stroke="#8E8F3A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="script">One Strip Clover</span>
+    <div class="sub">Photobox Digital</div>
+  </a>
+  <p class="tagline">One strip, one memory, one lucky charm.</p>
+  <div class="badge" id="premiumBadge">🍀 PREMIUM AKTIF</div>
+</header>
+
+<main>
+  <div class="booth">
+    <div class="viewport">
+      <video id="cam" autoplay playsinline muted></video>
+      <div class="lens-msg" id="lensMsg">Tekan <b>Mulai Sesi</b> untuk menyalakan kamera,<br>atau unggah 3 fotomu sendiri.</div>
+      <div class="rec" id="rec"><span class="dot"></span>KAMERA</div>
+      <div class="shots" id="shots"></div>
+      <div class="countdown" id="countdown">3</div>
+      <div class="flash" id="flash"></div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <span class="label">Filter</span>
+        <div class="seg" id="filterSeg" role="group" aria-label="Pilih filter">
+          <button data-f="warna" class="on">Warna</button>
+          <button data-f="bw">Hitam Putih</button>
+          <button data-f="sepia">Sepia</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="label">Bingkai</span>
+        <div class="framestrip" id="frameStrip" role="listbox" aria-label="Pilih bingkai"></div>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn btn-start" id="startBtn">Mulai Sesi</button>
+        <label class="btn btn-ghost" for="uploadInput" id="uploadLabel">Unggah foto</label>
+        <input type="file" id="uploadInput" accept="image/*" multiple>
+        <button class="btn btn-cancel" id="cancelBtn" style="display:none">✕ Batalkan sesi</button>
+      </div>
+      <div class="howto" id="howto">
+        <span><b>1</b> 3 foto berturut-turut</span>
+        <span><b>2</b> hitung mundur 3 detik</span>
+        <span><b>3</b> strip langsung jadi</span>
+      </div>
+      <div class="row">
+        <button class="btn btn-ghost" id="unlockBtn" style="font-size:13px;padding:9px 18px">🍀 Punya kode premium?</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- printed strip -->
+  <div class="slot-wrap" id="slotWrap">
+    <div class="slot" aria-hidden="true"></div>
+    <div class="strip-holder"><img id="stripImg" alt="Hasil photostrip kamu"></div>
+    <div class="actions">
+      <button class="btn btn-brass" id="downloadBtn">⬇ Unduh strip</button>
+      <button class="btn btn-ghost" id="retakeBtn">↺ Ulangi</button>
+      <button class="btn btn-ghost" id="studioBtn">✉ Kirim ke studio</button>
+    </div>
+    <p class="hint" id="qualityHint"></p>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer><span class="fscript">One Strip Clover</span><br>One strip, one memory, one lucky charm.</footer>
+
+<!-- ===== modal: kode premium ===== -->
+<div class="overlay" id="codeOverlay">
+  <div class="ticket" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+    <h2 id="codeTitle">Lucky Charm</h2>
+    <p>Masukkan kode dari pesananmu. Satu kode untuk satu kali keberuntungan.</p>
+    <div class="field">
+      <label for="codeInput">Kode akses</label>
+      <input type="text" id="codeInput" class="code-input" placeholder="OSC-XXXXXX" autocomplete="off" maxlength="12">
+    </div>
+    <div class="msg" id="codeMsg"></div>
+    <div class="buybox" id="buyBox">
+      <div class="buytitle">Belum punya kode?</div>
+      <ul class="benefits" id="benefitList"></ul>
+      <div class="price" id="priceTag"></div>
+      <div class="shoplinks" id="shopLinks"></div>
+    </div>
+
+    <div class="btns">
+      <button class="btn btn-ghost" data-close style="color:var(--soot);border-color:#c9bda0">Batal</button>
+      <button class="btn btn-red" id="codeSubmit">Buka premium</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== modal: kirim ke studio (fallback) ===== -->
+<div class="overlay" id="studioOverlay">
+  <div class="ticket" role="dialog" aria-modal="true" aria-labelledby="studioTitle">
+    <h2 id="studioTitle">Kirim ke Studio</h2>
+    <p id="studioIntro">Foto-fotomu akan dikirim ke tim studio kami untuk dibuatkan strip secara manual, lalu hasilnya kami kirim balik ke kontakmu.</p>
+    <div class="field">
+      <label for="nameInput">Nama lengkap *</label>
+      <input type="text" id="nameInput" placeholder="cth: Daniel Wijaya" autocomplete="name">
+    </div>
+    <div class="field">
+      <label for="emailInput">Email</label>
+      <input type="text" id="emailInput" placeholder="cth: nama@gmail.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="waInput">No. WhatsApp</label>
+      <input type="text" id="waInput" placeholder="cth: 08121234567" autocomplete="tel">
+    </div>
+    <div class="field">
+      <label for="addressInput">Alamat pengiriman *</label>
+      <textarea id="addressInput" rows="3" autocomplete="street-address"
+        placeholder="Jalan &amp; no. rumah, RT/RW, kelurahan, kecamatan,&#10;kota/kabupaten, provinsi, kode pos"></textarea>
+    </div>
+    <p style="font-size:12px;color:#7a6c50;margin-top:8px;line-height:1.5">
+      * Nama &amp; alamat wajib diisi. Email <b>atau</b> WhatsApp minimal salah satu,
+      supaya kami bisa mengabari kamu soal pengiriman.
+    </p>
+    <div class="field">
+      <label for="noteInput">Catatan (opsional)</label>
+      <textarea id="noteInput" rows="2" placeholder="cth: mau bingkai bunga"></textarea>
+    </div>
+    <div class="finalwarn">
+      <b>⚠️ Kodemu hangus setelah pesanan ini dikirim.</b>
+      Satu kode = satu strip cetak. Pastikan nama, kontak, dan alamat
+      di atas sudah benar sebelum menekan Kirim.
+    </div>
+    <label class="consent">
+      <input type="checkbox" id="consentBox">
+      <span>Saya setuju foto, nama, kontak, dan alamat saya dikirim ke studio untuk memproses &amp; mengirim pesanan ini (lalu dihapus setelah selesai), dan saya paham <b>kode premium saya langsung hangus</b> begitu pesanan terkirim.</span>
+    </label>
+    <div class="progwrap" id="progWrap">
+      <div class="progbar"><div class="progfill" id="progFill"></div></div>
+      <div class="progtext" id="progText">Menyiapkan…</div>
+    </div>
+    <div class="msg" id="studioMsg"></div>
+    <div class="btns" id="studioBtns">
+      <button class="btn btn-ghost" data-close style="color:var(--soot);border-color:#c9bda0">Batal</button>
+      <button class="btn btn-red" id="studioSubmit">Kirim foto</button>
+    </div>
+
+    <!-- layar konfirmasi setelah berhasil -->
+    <div id="studioDone" style="display:none">
+      <div class="donetick">✓</div>
+      <h2 style="text-align:center;margin-bottom:6px">Terima kasih!</h2>
+      <p style="text-align:center">Simpan nomor pesanan ini untuk menghubungi kami.</p>
+      <div class="refbox">
+        <div class="refno" id="refNo">—</div>
+        <button class="copyref" id="copyRef">Salin nomor</button>
+      </div>
+      <div class="summary" id="doneSummary"></div>
+      <div class="nextsteps" id="queuedNote" style="display:none;background:rgba(249,228,235,.8)">
+        <b>Catatan:</b> jaringan ke studio sedang bermasalah, tapi
+        <b>fotomu sudah aman tersimpan</b> di server kami dan akan dikirim
+        otomatis begitu pulih. Pesananmu tetap diproses.
+      </div>
+      <div class="nextsteps">
+        <b>Kode <span id="doneCode">—</span> sudah hangus. Selanjutnya:</b>
+        <ol>
+          <li>Tim studio membuat stripmu secara manual</li>
+          <li>Kami hubungi kamu maksimal <b>2×24 jam</b></li>
+          <li>Strip dicetak &amp; dikirim ke alamatmu</li>
+        </ol>
+      </div>
+      <div class="btns">
+        <button class="btn btn-red" data-close style="width:100%">Selesai</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   TOKO — harga & link diatur lewat file .env di server, BUKAN di sini.
+   Buka .env lalu isi:
+       PREMIUM_PRICE=Rp 15.000
+       SHOP_TIKTOK=https://...
+       SHOP_TOKOPEDIA=https://...
+       SHOP_SHOPEE=https://...
+       SHOP_WHATSAPP=6281234567890
+   Lalu restart server. Yang dikosongkan tidak akan muncul tombolnya.
+   Nilai di bawah cuma cadangan kalau server belum sempat menjawab.
+   =================================================================== */
+const SHOP = {
+  price: "",
+  links: { "TikTok Shop":"", "Tokopedia":"", "Shopee":"" },
+  waAdmin: "",
+  benefits: [
+    "3 bingkai eksklusif: Blush, Mint & Plum",
+    "Unduhan HD tanpa watermark",
+    "Strip dicetak & dikirim ke rumahmu — lucky charm asli",
+  ],
+};
+
+/* ------------------------- template strip -------------------------
+   Kalau admin sudah mengunggah desain strip, gambar itu yang dipakai —
+   foto pembeli ditempel di kotak yang posisinya diatur dari /admin. */
+// Daftar template dari admin. Tiap template = satu pilihan bingkai.
+const TPL = { items:[], images:{} };  // images: id → objek gambar yang sudah dimuat
+
+async function loadTemplate(){
+  try{
+    const r = await fetch("/api/template");
+    const d = await r.json();
+    TPL.items = (d && Array.isArray(d.items)) ? d.items : [];
+
+    // muat semua gambar template lebih dulu supaya langsung bisa dipakai
+    await Promise.all(TPL.items.map(async (it)=>{
+      try{
+        TPL.images[it.id] = await loadImg(
+          "/api/template/image?id=" + it.id + "&v=" + encodeURIComponent(it.versi||"1"));
+      }catch(e){ /* satu gagal, lainnya tetap jalan */ }
+    }));
+
+    rebuildFrames();
+    if(TPL.items.length){ S.frameIdx = 0; terapkanRasioFoto(TPL.items[0].layout); }
+    renderFrameStrip();
+    if(S.photos.length===SHOTS) composeStrip();
+  }catch(e){
+    console.warn("[ONE STRIP CLOVER] Template gagal dimuat, pakai desain bawaan:", e.message);
+    TPL.items = [];
+  }
+}
+/* Ambil setelan toko dari server, lalu gambar ulang kotak "beli kode" */
+async function loadShopConfig(){
+  try{
+    const r = await fetch("/api/config");
+    const d = await r.json();
+    if(!d || !d.ok) return;
+    SHOP.price = d.price || "";
+    SHOP.links["TikTok Shop"] = (d.shops && d.shops.tiktok)    || "";
+    SHOP.links["Tokopedia"]   = (d.shops && d.shops.tokopedia) || "";
+    SHOP.links["Shopee"]      = (d.shops && d.shops.shopee)    || "";
+    SHOP.waAdmin              = (d.shops && d.shops.whatsapp)  || "";
+  }catch(e){
+    console.warn("[ONE STRIP CLOVER] Gagal memuat /api/config:", e.message);
+  }
+  renderBuyBox();
+}
+
+/* =============================== state =============================== */
+const S = {
+  stream: null,
+  photos: [],        // raw dataURLs of the 4 shots (mirrored back to normal)
+  filter: "warna",
+  frameIdx: 0,
+  premium: false,
+  token: null,
+  lastStrip: null,
+  takenAt: null,
+  code: null,
+  genFailed: false,
+  cancel: false,
+  busy: false,
+};
+
+const FILTERS = StripRenderer.FILTERS;
+
+const C = StripRenderer.C; // palet brand, satu sumber kebenaran
+
+// Daftar bingkai & filter diambil dari modul bersama — kalau ditulis ulang
+// di sini, suatu hari daftarnya beda dengan yang dipakai server.
+// Daftar bingkai. Kalau admin sudah mengunggah template, template itu
+// muncul sebagai pilihan PERTAMA di baris Bingkai — jadi pembeli bisa
+// memilih desainmu atau kembali ke bingkai bawaan.
+let FRAMES = [];
+function rebuildFrames(){
+  const bawaan = StripRenderer.FRAMES.map(f => ({
+    ...f, name: f.name + (f.premium ? " ★" : "")
+  }));
+  const template = TPL.items.map(it => ({
+    id: "__tpl_" + it.id,
+    name: it.nama,
+    premium: false,
+    isTemplate: true,
+    templateId: it.id,
+    layout: it.layout,
+  }));
+  FRAMES = [...template, ...bawaan]; // template dulu, lalu bingkai bawaan
+}
+
+const $ = (id) => document.getElementById(id);
+
+// Foto KOTAK (1:1) di semua perangkat.
+// Alasannya bukan selera: 3 foto kotak menghasilkan strip berbanding 1 : 3,
+// yaitu ukuran strip photobox klasik (2 x 6 inci). Kalau fotonya 4:3, strip
+// jadi 1 : 2,37 — terlihat pendek dan gemuk.
+// Nilai ini dipakai di 3 tempat (pratinjau, jepretan, komposisi strip)
+// supaya yang dilihat = yang didapat, dan hasilnya sama di HP maupun laptop.
+// Rasio pratinjau kamera = rasio kotak foto di strip (5:4).
+// Kalau tidak disamakan, pembeli membingkai wajahnya di kotak persegi lalu
+// hasil cetaknya terpotong — yang dilihat bukan yang didapat.
+let ASPECT = StripRenderer.LAYOUT_BAWAAN.photoWmm / StripRenderer.LAYOUT_BAWAAN.photoHmm;
+
+/* Kalau template memakai foto 5:4 (atau rasio lain), pratinjau kamera dan
+   hasil jepretan ikut menyesuaikan — supaya yang dilihat = yang dicetak. */
+function terapkanRasioFoto(layout){
+  const L = layout || StripRenderer.LAYOUT_BAWAAN;
+  if(!L.photoWmm || !L.photoHmm) return;
+  ASPECT = L.photoWmm / L.photoHmm;
+  const vp = document.querySelector(".viewport");
+  if(vp) vp.style.aspectRatio = String(ASPECT);
+}
+jalankan("terapkanRasioFoto", ()=>terapkanRasioFoto(null));
+
+// Jumlah foto per sesi — diambil dari modul bersama supaya browser & server
+// tidak mungkin berbeda angka.
+const SHOTS = (window.StripRenderer && window.StripRenderer.PHOTO_COUNT) || 3;
+
+/* ---------------- penampil error di layar ----------------
+   Tanpa ini, satu baris yang gagal membuat separuh halaman mati diam-diam
+   (kamera tidak jalan, bingkai kosong, tombol tidak bereaksi) dan sulit
+   ditebak penyebabnya. Sekarang errornya muncul jelas beserta cara benahi. */
+function tampilkanErrorFatal(pesan, detail){
+  try{
+    const d=document.createElement("div");
+    d.style.cssText="position:fixed;inset:0;z-index:999;background:#3B2E38;color:#fff;"+
+      "display:grid;place-items:center;padding:28px;text-align:center;font-family:system-ui";
+    d.innerHTML="<div style='max-width:420px;line-height:1.6'>"+
+      "<div style='font-size:34px;margin-bottom:10px'>🍀</div>"+
+      "<h2 style='margin-bottom:10px;font-size:19px'>"+pesan+"</h2>"+
+      "<p style='font-size:13.5px;opacity:.85'>Coba <b>muat ulang paksa</b>: "+
+      "Cmd+Shift+R (Mac) atau Ctrl+Shift+R (Windows).</p>"+
+      "<pre style='margin-top:14px;font-size:11px;opacity:.7;white-space:pre-wrap;text-align:left'>"+
+      String(detail||"").slice(0,300)+"</pre></div>";
+    document.body.appendChild(d);
+  }catch(e){ alert(pesan); }
+}
+
+if(!window.__oscSiap){
+  tampilkanErrorFatal(
+    "Berkas tampilan belum lengkap dimuat",
+    "strip-renderer.js tidak termuat atau versinya lama (cache browser)."
+  );
+  throw new Error("StripRenderer belum siap");
+}
+
+/* Banner error kecil di atas layar. Tanpa ini, satu baris yang gagal membuat
+   halaman "diam saja" — tombol tidak bereaksi tanpa penjelasan apa pun. */
+function bannerError(teks){
+  let b=document.getElementById("errBanner");
+  if(!b){
+    b=document.createElement("div");
+    b.id="errBanner";
+    b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#C0526B;"+
+      "color:#fff;font:12px/1.5 system-ui;padding:10px 14px;white-space:pre-wrap;"+
+      "max-height:40vh;overflow:auto";
+    document.body.appendChild(b);
+  }
+  b.textContent += teks + "\n";
+}
+
+window.addEventListener("error", (e)=>{
+  console.error("[ONE STRIP CLOVER]", e.message, e.filename, e.lineno);
+  bannerError("⚠️ " + e.message + "  (" + String(e.filename||"").split("/").pop() + ":" + e.lineno + ")");
+});
+window.addEventListener("unhandledrejection", (e)=>{
+  bannerError("⚠️ " + ((e.reason && e.reason.message) || e.reason));
+});
+
+/* Jalankan satu langkah persiapan secara terisolasi.
+   Kalau satu langkah gagal, langkah lain TETAP jalan — jadi kamera dan
+   tombol premium tidak ikut mati hanya karena thumbnail bingkai bermasalah. */
+function jalankan(nama, fn){
+  try{ return fn(); }
+  catch(err){
+    console.error("[ONE STRIP CLOVER] gagal di:", nama, err);
+    bannerError("⚠️ Gagal di \"" + nama + "\": " + err.message);
+    return null;
+  }
+}
+
+// Penanda build — buka Console (F12) untuk memastikan versi yang jalan
+console.log("%c🍀 One Strip Clover", "color:#AEAF4E;font-weight:700",
+  "| tata letak mm-grid | foto " +
+  StripRenderer.LAYOUT_BAWAAN.photoWmm + " x " + StripRenderer.LAYOUT_BAWAAN.photoHmm + " mm (5:4)" +
+  " | strip " + StripRenderer.STRIP_W_MM + " x " + StripRenderer.STRIP_H_MM + " mm");
+const cam=$("cam"), lensMsg=$("lensMsg"), rec=$("rec"), shots=$("shots"),
+  countdown=$("countdown"), flash=$("flash"), startBtn=$("startBtn");
+
+/* ============================== controls ============================== */
+$("filterSeg").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.filter=b.dataset.f;
+  document.querySelectorAll("#filterSeg button").forEach(x=>x.classList.toggle("on",x===b));
+  cam.style.filter=FILTERS[S.filter];
+  if(S.photos.length===SHOTS) composeStrip(); // re-render strip with new filter
+});
+cam.style.filter=FILTERS.warna;
+
+/* -------- thumbnail mini tiap bingkai (biar kelihatan sebelum dipilih) -------- */
+function frameThumb(frame){
+  const W=104,H=148;
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+  const st=StripRenderer.frameStyle(frame.id);
+
+  x.fillStyle=st.bg; x.fillRect(0,0,W,H);
+  if(st.wash){ x.fillStyle=st.wash; x.fillRect(0,0,W,H); }
+
+  const pad=W*0.14, pw=W-pad*2, ph=pw*0.62, gap=H*0.045;
+  for(let i=0;i<3;i++){
+    const y=pad*0.8+i*(ph+gap);
+    x.fillStyle=st.dark?"#4A3A46":"#D7D0C4";
+    x.fillRect(pad,y,pw,ph);
+    x.fillStyle=st.dark?"#5D4A58":"#C3BAAB";
+    x.beginPath(); x.arc(pad+pw*0.5,y+ph*0.42,ph*0.22,0,Math.PI*2); x.fill();
+  }
+
+  StripRenderer.drawFrameDecor(x, frame.id, W, H, {thumb:true});
+
+  x.fillStyle=st.accent;
+  x.fillRect(pad,H-pad*0.85,pw,2.5);
+  return c.toDataURL("image/png");
+}
+
+/* Gaya tiap bingkai — satu sumber kebenaran untuk thumbnail & strip asli */
+function renderFrameStrip(){
+  const strip=$("frameStrip");
+  if(!strip){ console.warn("[OSC] elemen frameStrip tidak ditemukan"); return; }
+
+  strip.innerHTML = FRAMES.map((f,i)=>{
+    const locked = f.premium && !S.premium;
+
+    // Kalau menggambar thumbnail gagal, JANGAN jatuhkan seluruh baris bingkai.
+    // Cukup tampilkan kotak warna polos — pengguna tetap bisa memilih bingkai,
+    // dan kamera serta tombol premium tetap hidup.
+    let gambar;
+    try{
+      gambar = f.isTemplate
+        ? `<img src="/api/template/image?id=${f.templateId}" alt="Template ${f.name}">`
+        : `<img src="${frameThumb(f)}" alt="Bingkai ${f.name}">`;
+    }catch(err){
+      console.error("[OSC] thumbnail gagal untuk bingkai", f.id, err);
+      const st = (StripRenderer.frameStyle && StripRenderer.frameStyle(f.id)) || {bg:"#EEE"};
+      gambar = `<span style="display:block;width:54px;height:76px;border-radius:8px;
+                 border:2px solid transparent;background:${st.bg}"></span>`;
+    }
+
+    return `<button class="fthumb ${i===S.frameIdx?"on":""}" data-i="${i}"
+              role="option" aria-selected="${i===S.frameIdx}" title="${f.name}">
+        ${gambar}
+        <span class="fname">${f.name.replace(" ★","")}${locked?' <span class="lock">🔒</span>':""}</span>
+      </button>`;
+  }).join("");
+}
+
+$("frameStrip").addEventListener("click",(e)=>{
+  const b=e.target.closest(".fthumb"); if(!b) return;
+  S.frameIdx=Number(b.dataset.i);
+  const f=FRAMES[S.frameIdx];
+  terapkanRasioFoto(f && f.isTemplate ? f.layout : StripRenderer.LAYOUT_BAWAAN);
+  renderFrameStrip();
+  b.scrollIntoView({block:"nearest",inline:"nearest"});
+  if(S.photos.length===SHOTS) composeStrip();
+});
+rebuildFrames();
+jalankan("renderFrameStrip", renderFrameStrip);
+jalankan("renderStudioBtn", renderStudioBtn);
+
+/* ---------------------- render kotak "beli kode" ---------------------- */
+/* Murni (tanpa DOM) supaya bisa diuji: tentukan isi & perlu tampil atau tidak */
+function buyBoxState(shop){
+  const links = (shop && shop.links) || {};
+  const entries = Object.entries(links).filter(([,u]) => u && String(u).trim());
+  const wa = shop && shop.waAdmin ? String(shop.waAdmin).trim() : "";
+
+  let html = entries.map(([name,url],i)=>{
+    // kalau jumlahnya ganjil, tombol terakhir dibuat selebar 2 kolom
+    const wide = (entries.length % 2 === 1 && i === entries.length-1 && !wa) ? " wide" : "";
+    return `<a class="${wide.trim()}" href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+  }).join("");
+
+  if(wa){
+    const wide = entries.length % 2 === 0 ? " wide" : "";
+    html += `<a class="wa${wide}" target="_blank" rel="noopener noreferrer"
+      href="https://wa.me/${wa}?text=${encodeURIComponent("Halo, saya mau beli kode One Strip Clover")}">💬 Chat admin</a>`;
+  }
+
+  return { visible: html.length > 0, html };
+}
+
+function renderBuyBox(){
+  $("benefitList").innerHTML = SHOP.benefits.map(b=>`<li>${b}</li>`).join("");
+  $("priceTag").innerHTML = SHOP.price
+    ? SHOP.price + `<small>Berlaku untuk 1 sesi photobox</small>`
+    : "";
+  $("priceTag").style.display = SHOP.price ? "" : "none";
+
+  const st = buyBoxState(SHOP);
+  $("shopLinks").innerHTML = st.html;
+  // PENTING: selalu set kedua-duanya. Dulu kotaknya disembunyikan saat render
+  // pertama (setelan belum datang dari server) dan tidak pernah dimunculkan lagi.
+  $("buyBox").style.display = st.visible ? "" : "none";
+
+  if(!st.visible){
+    console.warn("[ONE STRIP CLOVER] Link toko masih kosong. Isi SHOP_TIKTOK / SHOP_TOKOPEDIA / "+
+                 "SHOP_SHOPEE / SHOP_WHATSAPP di file .env lalu restart server.");
+  }
+}
+renderBuyBox();
+
+/* ------------------ ingat sesi premium di perangkat ------------------ */
+/* Kenapa perlu: kalau tidak, sekali refresh pembeli kehilangan akses padahal
+   kodenya sudah hangus → mereka harus beli lagi. Ini menyimpan token + kode
+   secara lokal, lalu memulihkannya otomatis saat halaman dibuka lagi.      */
+const STORE_KEY = "osc_premium";
+const DEVICE_KEY = "osc_device";
+
+/* ID perangkat: angka acak yang dibuat sekali lalu disimpan di perangkat ini.
+   Bukan data pribadi — tidak berisi info apa pun tentang pemiliknya.
+   Gunanya: mengikat kode ke SATU perangkat, supaya kode yang dibagikan ke
+   orang lain tidak bisa dipakai. */
+function deviceId(){
+  try{
+    let id = localStorage.getItem(DEVICE_KEY);
+    if(!id){
+      id = (crypto.randomUUID ? crypto.randomUUID()
+            : String(Date.now()) + Math.random().toString(36).slice(2));
+      localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  }catch(e){
+    // Mode privat: penyimpanan diblokir. Kirim null — server akan
+    // memperlakukannya sebagai perangkat baru.
+    return null;
+  }
+}
+
+function saveSession(token, code){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify({token, code, at:Date.now()}));
+  }catch(e){ /* mode privat / storage penuh → diabaikan, ada jalur ketik ulang kode */ }
+}
+function loadSession(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }
+  catch(e){ return null; }
+}
+function clearSession(){
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+}
+
+function applyPremium(code, token){
+  S.premium = true;
+  S.token = token;
+  S.code = code;
+  $("premiumBadge").style.display = "block";
+  renderFrameStrip();
+  renderStudioBtn();
+}
+
+async function restorePremium(){
+  const saved = loadSession();
+  if(!saved || !saved.token) return;
+
+  // 1) token masih sah?
+  try{
+    const r = await fetch("/api/session",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({token:saved.token})});
+    const d = await r.json();
+    if(d.ok){
+      applyPremium(d.code, saved.token);
+      toast("🍀 Sesi premium dipulihkan.", 2600);
+      return;
+    }
+  }catch(e){ /* offline → coba jalur berikutnya */ }
+
+  // 2) token kedaluwarsa tapi kodenya masih dalam masa tenggang → tukar ulang
+  if(saved.code){
+    try{
+      const r = await fetch("/api/redeem",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code:saved.code, deviceId:deviceId()})});
+      const d = await r.json();
+      if(d.ok){
+        applyPremium(saved.code, d.token);
+        saveSession(d.token, saved.code);
+        toast("🍀 Sesi premium dipulihkan.", 2600);
+        return;
+      }
+    }catch(e){}
+  }
+
+  clearSession(); // benar-benar sudah lewat → bersihkan
+}
+
+/* ------------------------------- toast ------------------------------- */
+let toastTimer;
+function toast(html, ms){
+  const t=$("toast");
+  t.innerHTML=html; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"), ms||4000);
+}
+
+/* =============================== camera =============================== */
+async function startCamera(){
+  if(S.stream) return true;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    lensMsg.style.display="grid";
+    lensMsg.innerHTML="Kamera hanya bisa jalan lewat <b>http://localhost:3000</b> (server) atau situs <b>HTTPS</b> — bukan file yang dibuka langsung.<br><br>Sementara itu, pakai tombol <b>Unggah foto</b> ya.";
+    return false;
+  }
+  try{
+    S.stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:"user", width:{ideal:1280}, height:{ideal:960} }, audio:false
+    });
+    cam.srcObject=S.stream;
+    lensMsg.style.display="none";
+    rec.classList.add("live");
+    return true;
+  }catch(err){
+    lensMsg.style.display="grid";
+    lensMsg.innerHTML="Kamera tidak bisa diakses 😢<br>Izinkan kamera di browser (ikon 🔒 di address bar), atau pakai tombol <b>Unggah foto</b>.";
+    return false;
+  }
+}
+
+function captureFrame(){
+  const vw=cam.videoWidth||1280, vh=cam.videoHeight||960;
+  // potong bagian tengah video agar rasionya sama persis dengan preview
+  let sw=vw, sh=vh;
+  if(vw/vh > ASPECT) sw = vh*ASPECT; else sh = vw/ASPECT;
+  const sx=(vw-sw)/2, sy=(vh-sh)/2;
+
+  const c=document.createElement("canvas");
+  c.width=Math.round(sw); c.height=Math.round(sh);
+  const ctx=c.getContext("2d");
+  ctx.translate(c.width,0); ctx.scale(-1,1); // un-mirror
+  ctx.drawImage(cam, sx,sy,sw,sh, 0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.92);
+}
+
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function endSession(){
+  S.busy=false; S.cancel=false;
+  startBtn.disabled=false;
+  startBtn.style.display=""; $("uploadLabel").style.display="";
+  $("cancelBtn").style.display="none";
+  countdown.style.display="none";
+  shots.textContent="";
+}
+
+$("cancelBtn").onclick=()=>{ S.cancel=true; };            // jalan keluar (#4)
+addEventListener("keydown",(e)=>{ if(e.key==="Escape" && S.busy) S.cancel=true; });
+
+if(startBtn) startBtn.addEventListener("click", async ()=>{
+  if(S.busy) return;
+  const ok=await startCamera(); if(!ok) return;
+
+  S.busy=true; S.cancel=false;
+  startBtn.disabled=true;
+  startBtn.style.display="none"; $("uploadLabel").style.display="none";
+  $("cancelBtn").style.display="";
+  S.photos=[]; $("slotWrap").style.display="none";
+
+  // aba-aba dulu supaya tidak kaget (#8)
+  countdown.style.display="grid";
+  countdown.style.fontSize="26px";
+  countdown.textContent=`Bersiap… ${SHOTS} foto!`;
+  await wait(reduceMotion?500:1400);
+  countdown.style.fontSize="";
+
+  for(let i=1;i<=SHOTS;i++){
+    if(S.cancel) break;
+    shots.textContent=`FOTO ${i}/${SHOTS}`;
+    for(let n=3;n>=1;n--){
+      if(S.cancel) break;
+      countdown.textContent=n; countdown.style.display="grid";
+      await wait(reduceMotion?350:800);
+    }
+    if(S.cancel) break;
+    countdown.style.display="none";
+    flash.classList.remove("on"); void flash.offsetWidth; flash.classList.add("on");
+    S.photos.push(captureFrame());
+    await wait(500);
+  }
+
+  if(S.cancel){
+    S.photos=[];
+    endSession();
+    toast("Sesi dibatalkan. Tekan Mulai Sesi kapan pun kamu siap.", 3000);
+    return;
+  }
+
+  S.takenAt=new Date().toISOString();
+  endSession();
+  composeStrip();
+});
+
+/* ============================ upload path ============================= */
+if($("uploadInput")) $("uploadInput").addEventListener("change", async (e)=>{
+  const files=[...e.target.files].slice(0,SHOTS);
+  if(files.length===0) return;
+  S.photos=[];
+  for(const f of files){
+    S.photos.push(await new Promise((res)=>{
+      const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);
+    }));
+  }
+  while(S.photos.length<SHOTS) S.photos.push(S.photos[S.photos.length-1]); // lengkapi kalau kurang
+  S.takenAt=new Date().toISOString();
+  composeStrip();
+  e.target.value="";
+});
+
+/* =========================== strip composer =========================== */
+function loadImg(src){return new Promise((res,rej)=>{
+  const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src;
+});}
+
+async function composeStrip(opts){
+  const o = opts || {};
+  // o.studio = true → versi bersih untuk studio: HD, tanpa watermark,
+  //                   tidak mengubah tampilan halaman
+  try{
+    const HD = o.studio ? true : S.premium;
+    const W  = o.studio ? 1200 : (HD ? 960 : 480);
+
+    const images = [];
+    for(let i=0;i<SHOTS;i++) images.push(await loadImg(S.photos[i]));
+
+    // Tinggi selalu dari ukuran fisik strip (56,1 x 171,5 mm), baik memakai
+    // template maupun bingkai bawaan — supaya hasil cetaknya identik.
+    const H = Math.ceil(StripRenderer.stripHeight(W));
+    const c=document.createElement("canvas"); c.width=W; c.height=H;
+    const ctx=c.getContext("2d");
+
+    const frame=FRAMES[S.frameIdx];
+    // Bingkai premium tetap bisa dilihat pemakai gratis (berwatermark) —
+    // ini yang mendorong mereka membeli kode.
+    StripRenderer.drawStrip(ctx, images, {
+      width:W, aspect:ASPECT,
+      frameId:frame.id, filter:S.filter,
+      // Template dipakai HANYA kalau pembeli memilih bingkai template.
+      templateImage: frame.isTemplate ? (TPL.images[frame.templateId] || null) : null,
+      layout: frame.isTemplate ? frame.layout : StripRenderer.LAYOUT_BAWAAN,
+      watermark: !S.premium && !o.studio,
+      dateText:new Date().toLocaleDateString("id-ID",
+        {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
+    });
+
+    if(o.studio) return c.toDataURL("image/jpeg",0.95);
+
+    const url=c.toDataURL("image/jpeg",0.92);
+    S.lastStrip=url;
+    const strip=$("stripImg");
+    strip.classList.remove("printed");
+    strip.src=url;
+    $("slotWrap").style.display="block";
+    $("howto").style.display="none";
+    requestAnimationFrame(()=>strip.classList.add("printed"));
+
+    const lockedPreview = frame.premium && !S.premium;
+    $("qualityHint").innerHTML = S.premium
+      ? "Kualitas HD tanpa watermark. Terima kasih! 🍀"
+      : lockedPreview
+        ? `Ini preview bingkai <b>premium</b> (watermark). <a href="#" id="hintUnlock">Buka dengan kode</a> untuk unduhan bersih &amp; HD.`
+        : `Versi gratis (watermark). <a href="#" id="hintUnlock">Punya kode premium?</a>`;
+    const hu=$("hintUnlock"); if(hu) hu.onclick=(e)=>{e.preventDefault();openOverlay("codeOverlay");};
+    strip.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+  }catch(err){
+    console.error(err);
+    if(o.studio) return null;
+    S.genFailed=true;
+    if(S.premium){
+      $("studioIntro").textContent =
+        "Waduh, strip gagal dibuat otomatis 😔 Tapi tenang — kirim fotomu ke studio kami dan tim kami akan membuatkan stripnya manual.";
+      openOverlay("studioOverlay");
+    }else{
+      $("slotWrap").style.display="block";
+      $("qualityHint").innerHTML =
+        "Strip gagal dibuat otomatis 😔 Coba ulangi, atau " +
+        "<a href=\"#\" id=\"hintUnlock\">buka premium</a> untuk minta dibuatkan manual oleh studio kami.";
+      const hu=$("hintUnlock"); if(hu) hu.onclick=(e)=>{e.preventDefault();openOverlay("codeOverlay");};
+    }
+  }
+}
+
+/* Lembar cetak A4 kini dibuat DI SERVER sebagai PDF (lib/pdf.js) —
+   ukuran cetaknya pasti dan tidak bergantung pada kanvas browser.
+   Fungsi di bawah dipertahankan kalau suatu saat perlu pratinjau A4. */
+async function composeA4(){
+  try{
+    const images=[];
+    for(let i=0;i<SHOTS;i++) images.push(await loadImg(S.photos[i]));
+    // 1754 px lebar ≈ 150 dpi. Sengaja tidak 300 dpi (2480 px) karena
+    // kanvas 2480x3508 = 8,7 juta piksel bisa gagal di Safari iOS lama.
+    // Server akan membuat ulang versi 300 dpi kalau tersedia.
+    const size=StripRenderer.a4Size(1754);
+    const c=document.createElement("canvas");
+    c.width=size.width; c.height=size.height;
+    const ctx=c.getContext("2d");
+    StripRenderer.drawA4Sheet(ctx, images, {
+      a4Width:size.width, copies:1, stripWidth:800, aspect:ASPECT,
+      frameId:FRAMES[S.frameIdx].id, filter:S.filter, watermark:false,
+      dateText:new Date().toLocaleDateString("id-ID",
+        {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
+    });
+    return c.toDataURL("image/jpeg",0.92);
+  }catch(e){ console.error(e); return null; }
+}
+
+$("retakeBtn").onclick=()=>{
+  if(!retakeArmed){
+    // konfirmasi dua langkah: sekali ketuk = tanya, ketuk lagi = benar-benar hapus
+    retakeArmed=true;
+    $("retakeBtn").textContent="⚠ Yakin? Ketuk lagi";
+    $("retakeBtn").style.borderColor="var(--safelight)";
+    clearTimeout(retakeTimer);
+    retakeTimer=setTimeout(()=>{
+      retakeArmed=false;
+      $("retakeBtn").textContent="↺ Ulangi";
+      $("retakeBtn").style.borderColor="";
+    },3500);
+    return;
+  }
+  clearTimeout(retakeTimer); retakeArmed=false;
+  $("retakeBtn").textContent="↺ Ulangi"; $("retakeBtn").style.borderColor="";
+  S.photos=[]; S.lastStrip=null; $("slotWrap").style.display="none";
+  $("howto").style.display="";
+  window.scrollTo({top:0,behavior:reduceMotion?"auto":"smooth"});
+};
+
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+
+async function ambilStripUntukDiunduh(){
+  // PREMIUM: strip bersih dibuat DI SERVER, bukan di browser.
+  // Ini yang membuat "paksa premium lewat DevTools" tidak ada gunanya —
+  // tanpa token sah, server menolak dan yang didapat tetap berwatermark.
+  if(S.premium && S.token && S.photos.length===SHOTS){
+    try{
+      const r=await fetch("/api/render-strip",{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          token:S.token, photos:S.photos,
+          frameId:FRAMES[S.frameIdx].id, filter:S.filter,
+          aspect:ASPECT, width:1400,
+          dateText:new Date().toLocaleDateString("id-ID",
+            {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
+        })});
+      if(r.ok) return await r.blob();
+
+      // 501 = server belum bisa merender → pakai versi browser (berwatermark)
+      if(r.status===403){
+        toast("Sesi premium habis. Masukkan kodemu lagi ya.", 5000);
+        return null;
+      }
+    }catch(e){ /* jaringan bermasalah → jatuh ke versi browser */ }
+  }
+  // GRATIS (atau server render nonaktif): pakai gambar yang sudah tampil
+  const src=$("stripImg").src;
+  if(!src) return null;
+  return await (await fetch(src)).blob();
+}
+
+$("downloadBtn").onclick=async ()=>{
+  const filename=`one-strip-clover-${Date.now()}.jpg`;
+  $("downloadBtn").disabled=true;
+  const teksAsli=$("downloadBtn").textContent;
+  $("downloadBtn").textContent="Menyiapkan…";
+
+  try{
+    const blob=await ambilStripUntukDiunduh();
+    $("downloadBtn").disabled=false;
+    $("downloadBtn").textContent=teksAsli;
+    if(!blob) return;
+    const file=new File([blob],filename,{type:"image/jpeg"});
+
+    // 1) Cara terbaik di HP: share sheet bawaan → "Simpan ke Foto"
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file], title:"One Strip Clover"});
+        return;
+      }catch(err){
+        if(err && err.name==="AbortError") return; // user membatalkan, wajar
+        // selain itu: lanjut ke cara berikutnya
+      }
+    }
+
+    // 2) iOS Safari tanpa share: atribut download diabaikan → beri instruksi
+    if(IS_IOS){
+      toast("📲 Di iPhone: <b>tekan lama</b> gambar strip di atas, lalu pilih <b>“Simpan ke Foto”</b>.", 7000);
+      return;
+    }
+
+    // 3) Desktop & Android: unduh biasa
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast("✅ Strip tersimpan di folder Download.", 3000);
+  }catch(e){
+    $("downloadBtn").disabled=false;
+    $("downloadBtn").textContent=teksAsli;
+    toast("Gagal mengunduh. Coba tekan lama gambarnya lalu simpan manual.", 6000);
+  }
+};
+
+/* ============================== modals =============================== */
+function openOverlay(id){ $(id).classList.add("open");
+  const inp=$(id).querySelector("input"); if(inp) setTimeout(()=>inp.focus(),60); }
+function closeOverlays(){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("open")); }
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeOverlays);
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",(e)=>{ if(e.target===o) closeOverlays(); }));
+addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeOverlays(); });
+
+$("unlockBtn").onclick=()=>openOverlay("codeOverlay");
+function resetStudioModal(){
+  $("studioDone").style.display="none";
+  $("studioTitle").style.display="";
+  ["studioIntro","studioBtns","studioMsg"].forEach(id=>{
+    const el=$(id); if(el) el.style.display="";
+  });
+  $("studioOverlay").querySelectorAll(".field").forEach(f=>f.style.display="");
+  $("studioOverlay").querySelectorAll(".consent").forEach(f=>f.style.display="");
+  $("studioOverlay").querySelectorAll("p").forEach(p=>{ if(!p.closest("#studioDone")) p.style.display=""; });
+  $("progWrap").style.display="none";
+  $("progFill").style.width="0%";
+  $("studioMsg").textContent=""; $("studioMsg").className="msg";
+}
+
+function openStudio(){
+  if(!S.premium){
+    // fitur khusus premium → arahkan ke penukaran kode
+    $("codeMsg").textContent="Fitur \u201cKirim ke Studio\u201d khusus premium. Masukkan kodemu dulu ya.";
+    $("codeMsg").className="msg";
+    openOverlay("codeOverlay");
+    return;
+  }
+  resetStudioModal();
+  $("studioIntro").textContent="Foto-fotomu akan dikirim ke tim studio kami untuk dibuatkan strip secara manual, lalu hasilnya kami kirim balik ke kontakmu.";
+  openOverlay("studioOverlay");
+}
+$("studioBtn").onclick=()=>{ S.genFailed=false; openStudio(); };
+
+function renderStudioBtn(){
+  $("studioBtn").textContent = S.premium ? "\u2709 Kirim ke studio" : "\uD83C\uDF40 Kirim ke studio (premium)";
+}
+
+/* ------------------------ premium code redeem ------------------------ */
+$("codeSubmit").onclick=async ()=>{
+  const msg=$("codeMsg"); msg.className="msg";
+  const code=$("codeInput").value.trim().toUpperCase();
+  if(!code){ msg.textContent="Isi kodenya dulu ya."; msg.classList.add("err"); return; }
+  msg.textContent="Memeriksa kode…";
+  try{
+    const r=await fetch("/api/redeem",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      // deviceId WAJIB ikut — tanpa ini server tidak bisa mengikat kode
+      // ke satu perangkat, dan kode yang dibagikan akan bisa dipakai siapa saja.
+      body:JSON.stringify({code, deviceId:deviceId()})});
+    const d=await r.json();
+    if(d.ok){
+      applyPremium(code, d.token);
+      saveSession(d.token, code);
+      msg.textContent = d.reentry
+        ? "Sesi premium dipulihkan 🍀 (kode ini sudah pernah dipakai di perangkat lain)"
+        : "Kode diterima! Premium aktif 🍀";
+      msg.classList.add("okk");
+      setTimeout(()=>{ closeOverlays(); if(S.photos.length===SHOTS) composeStrip(); },900);
+    }else{
+      msg.classList.add("err");
+      msg.innerHTML = d.error==="TOO_MANY_REQUESTS"
+        ? "Terlalu banyak percobaan kode. Tunggu beberapa menit ya."
+        : d.error==="OTHER_DEVICE"
+        ? "Kode ini sudah dipakai di perangkat lain. Satu kode hanya untuk satu perangkat. Kalau ini memang kodemu, hubungi kami ya."
+        : d.error==="SPENT"
+        ? (d.ref
+            ? `Kode ini sudah dipakai untuk pesanan <b>${d.ref}</b>. Satu kode hanya untuk satu strip.`
+            : "Kode ini sudah dipakai untuk memesan. Satu kode hanya untuk satu strip.")
+        : d.error==="USED"
+        ? `Kode ini sudah dipakai lebih dari ${d.graceHours||72} jam lalu. Kalau kamu merasa ini keliru, hubungi kami dengan menyebutkan kodenya.`
+        : "Kode tidak ditemukan. Cek lagi ejaannya ya.";
+    }
+  }catch(e){ msg.textContent="Server tidak merespons. Coba lagi sebentar."; msg.classList.add("err"); }
+};
+$("codeInput").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("codeSubmit").click(); });
+
+/* ------------------------ studio fallback send ------------------------ */
+/* ---------------- tampilkan layar konfirmasi pesanan ---------------- */
+function showOrderDone(ref, queued){
+  const addr=$("addressInput").value.trim().replace(/\s*\n\s*/g,", ");
+  $("refNo").textContent = ref || "-";
+  const dc=$("doneCode"); if(dc) dc.textContent = S.code || "—";
+  const qn=$("queuedNote"); if(qn) qn.style.display = queued ? "block" : "none";
+  $("doneSummary").innerHTML = [
+    ["Nama",     $("nameInput").value.trim()],
+    ["Kontak",   $("emailInput").value.trim() || $("waInput").value.trim()],
+    ["Alamat",   addr.length>90 ? addr.slice(0,90)+"…" : addr],
+    ["Kode",     (S.code || "-") + " (hangus)"],
+  ].map(([k,v])=>`<div><span>${k}</span><span>${(v||"-").replace(/[<>]/g,"")}</span></div>`).join("");
+
+  // sembunyikan form, tampilkan konfirmasi
+  ["studioIntro","studioBtns","progWrap","studioMsg"].forEach(id=>{
+    const el=$(id); if(el) el.style.display="none";
+  });
+  $("studioOverlay").querySelectorAll(".field").forEach(f=>f.style.display="none");
+  $("studioOverlay").querySelectorAll(".consent").forEach(f=>f.style.display="none");
+  $("studioOverlay").querySelectorAll("p").forEach(p=>{ if(!p.closest("#studioDone")) p.style.display="none"; });
+  $("studioTitle").style.display="none";
+  $("studioDone").style.display="block";
+  $("studioDone").scrollIntoView({block:"start",behavior:"smooth"});
+}
+
+$("copyRef").onclick=async ()=>{
+  try{ await navigator.clipboard.writeText($("refNo").textContent);
+    $("copyRef").textContent="Tersalin ✓";
+    setTimeout(()=>$("copyRef").textContent="Salin nomor",1600);
+  }catch(e){ toast("Salin manual ya: "+$("refNo").textContent, 5000); }
+};
+
+/* --------- tanggapi hasil kiriman ke studio (dipakai oleh XHR) --------- */
+function handleStudioResponse(d,msg,setProg){
+  msg.className="msg";
+  if(d && d.ok){
+    setProg(100,"Selesai ✓");
+    showOrderDone(d.ref, d.queued);
+    return;
+  }
+  $("progWrap").style.display="none";
+  const e=(d&&d.error)||"";
+  const say=(t)=>{ msg.innerHTML=t; msg.classList.add("err"); };
+
+  if(e==="PREMIUM_REQUIRED"){
+    say("Sesi premium habis atau belum aktif. Masukkan kode premium lagi.");
+    setTimeout(()=>{ closeOverlays(); openOverlay("codeOverlay"); },1400);
+  }
+  else if(e==="NAME_REQUIRED")     say("Nama lengkap wajib diisi.");
+  else if(e==="CONTACT_REQUIRED")  say("Isi email atau nomor WhatsApp.");
+  else if(e==="ADDRESS_REQUIRED")  say("Alamat pengiriman wajib diisi.");
+  else if(e==="SUBMISSION_LIMIT")  say("Kode ini sudah dipakai untuk <b>"+d.max+"x</b> pesanan studio (batas maksimal). Hubungi kami kalau ada kendala.");
+  else if(e==="TOO_MANY_REQUESTS") say("Terlalu banyak percobaan. Coba lagi beberapa menit lagi.");
+  else if(e==="ALREADY_PROCESSING") say("Pesananmu sedang diproses — tunggu sebentar, jangan menekan kirim dua kali ya.");
+  else if(e==="NOT_CONFIGURED")    say("Email/Drive belum diatur di server. Cek file <b>.env</b> lalu restart server.");
+  else if(e==="TIMEOUT")           say("Jaringan terlalu lambat sampai waktu habis. Coba pakai WiFi, lalu kirim ulang.");
+  else if(e==="NETWORK")           say("Koneksi terputus saat mengirim. Cek internetmu lalu coba lagi.");
+  else                             say("Gagal mengirim. Coba lagi, atau hubungi kami langsung.");
+}
+
+$("studioSubmit").onclick=async ()=>{
+  const msg=$("studioMsg"); msg.className="msg";
+  if(S.photos.length===0){ msg.textContent="Belum ada foto — ambil atau unggah dulu."; msg.classList.add("err"); return; }
+  if(!$("consentBox").checked){ msg.textContent="Centang persetujuan dulu ya."; msg.classList.add("err"); return; }
+
+  const name=$("nameInput").value.trim();
+  const email=$("emailInput").value.trim();
+  const wa=$("waInput").value.trim();
+
+  if(!name){ msg.textContent="Nama lengkap wajib diisi."; msg.classList.add("err"); $("nameInput").focus(); return; }
+
+  if(!email && !wa){
+    msg.textContent="Isi email ATAU nomor WhatsApp (minimal salah satu).";
+    msg.classList.add("err"); $("emailInput").focus(); return;
+  }
+  const address=$("addressInput").value.trim();
+  if(address.length<12){
+    msg.textContent="Alamat pengiriman wajib diisi selengkap mungkin.";
+    msg.classList.add("err"); $("addressInput").focus(); return;
+  }
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    msg.textContent="Format email sepertinya keliru."; msg.classList.add("err"); $("emailInput").focus(); return;
+  }
+  if(wa && !/^[0-9+()\-\s]{8,20}$/.test(wa)){
+    msg.textContent="Nomor WhatsApp sepertinya keliru."; msg.classList.add("err"); $("waInput").focus(); return;
+  }
+
+  const setProg=(pct,txt)=>{
+    $("progWrap").style.display="block";
+    $("progFill").style.width=Math.max(2,Math.min(100,pct))+"%";
+    $("progText").textContent=txt;
+  };
+
+  msg.textContent="";
+  $("studioSubmit").disabled=true;
+  $("studioSubmit").textContent="Mengirim…";
+  setProg(3,"Menyiapkan foto…");
+
+  const studioStrip = await composeStrip({studio:true});   // versi bersih HD
+
+  const payload=JSON.stringify({
+    photos:S.photos,
+    name, email, wa, address,
+    contact: email || wa,
+    note:$("noteInput").value.trim(),
+    takenAt: S.takenAt || new Date().toISOString(),
+    token: S.token,
+    consent:true,
+    strip:studioStrip||S.lastStrip||null,
+    reason:S.genFailed?"generation_failed":"user_request",
+    style:`filter=${S.filter}; bingkai=${FRAMES[S.frameIdx].name}`
+  });
+
+  const mb=(payload.length/1024/1024).toFixed(1);
+  setProg(5,`Mengunggah 0% (${mb} MB)`);
+
+  const finish=(d)=>{
+    $("studioSubmit").disabled=false;
+    $("studioSubmit").textContent="Kirim foto";
+    handleStudioResponse(d,msg,setProg);
+  };
+
+  try{
+    // XHR dipakai (bukan fetch) karena hanya XHR yang bisa melaporkan
+    // progres upload — penting karena payload bisa 2-4 MB di jaringan HP.
+    const xhr=new XMLHttpRequest();
+    xhr.open("POST","/api/fallback-upload");
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.timeout=180000; // 3 menit, jaringan lambat masih diberi kesempatan
+
+    xhr.upload.onprogress=(e)=>{
+      if(!e.lengthComputable) return;
+      const pct=Math.round((e.loaded/e.total)*100);
+      // upload = 0-85% dari bar, sisanya untuk proses di server
+      setProg(5+pct*0.8, pct<100 ? `Mengunggah ${pct}% (${mb} MB)` : "Diproses studio…");
+    };
+    xhr.upload.onload=()=>setProg(88,"Diproses studio… (email & drive)");
+
+    xhr.onload=()=>{
+      let d={}; try{ d=JSON.parse(xhr.responseText); }catch(e){}
+      finish(d);
+    };
+    xhr.onerror=()=>finish({error:"NETWORK"});
+    xhr.ontimeout=()=>finish({error:"TIMEOUT"});
+    xhr.send(payload);
+  }catch(e){
+    finish({error:"NETWORK"});
+  }
+  $("studioSubmit").disabled=false;
+};
+
+/* dipanggil terakhir agar semua fungsi sudah siap */
+jalankan("loadShopConfig", loadShopConfig);
+jalankan("loadTemplate", loadTemplate);
+jalankan("restorePremium", restorePremium);
+
+</script>
+</body>
+</html>

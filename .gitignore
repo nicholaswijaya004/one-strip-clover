@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/batch-*.txt
+data/*.log
+data/*.log.1
+data/settings.json
+data/template/

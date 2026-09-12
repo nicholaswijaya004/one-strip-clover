@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Strip Clover — Photobox Digital</title>
+<meta name="description" content="Photobox digital di browser. Ambil 3 foto, pilih bingkai, dapatkan strip kenangan — dan cetakan aslinya kami kirim ke rumahmu.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Montserrat:wght@600;700;800&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --clover:#AEAF4E; --clover-deep:#8E8F3A;
+    --blush:#F9E4EB; --mint:#86F2EC; --plum:#6C4862; --peri:#A9BAD6;
+    --cream:#FCFAF3; --paper:#FFFEFA; --ink:#3B2E38; --muted:#8A7C86;
+    --line:rgba(108,72,98,.13);
+    --script:'Parisienne',cursive;
+    --display:'Montserrat',system-ui,sans-serif;
+    --body:'Karla',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:
+      radial-gradient(880px 440px at 8% -8%, rgba(249,228,235,.65), transparent 58%),
+      radial-gradient(760px 380px at 94% 0%, rgba(134,242,236,.32), transparent 60%),
+      radial-gradient(820px 560px at 50% 108%, rgba(169,186,214,.34), transparent 60%),
+      var(--cream);
+    color:var(--ink); font-family:var(--body);
+    min-height:100vh; padding:0 20px 56px;
+    display:flex; flex-direction:column; align-items:center;
+    position:relative; overflow-x:hidden;
+  }
+
+  /* butiran halus — menghilangkan kesan "warna datar" */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.45;
+    background-image:radial-gradient(rgba(108,72,98,.16) .5px, transparent .5px);
+    background-size:3px 3px;
+  }
+
+  /* semanggi hias yang mengambang pelan di latar */
+  .hias{position:fixed; z-index:0; pointer-events:none; opacity:.13}
+  .hias.a{top:9%;  left:6%;   width:78px; animation:apung 11s ease-in-out infinite}
+  .hias.b{top:26%; right:5%;  width:52px; animation:apung 9s ease-in-out infinite reverse}
+  .hias.c{bottom:14%; left:11%; width:44px; animation:apung 13s ease-in-out infinite}
+  .hias.d{bottom:24%; right:9%; width:66px; animation:apung 10s ease-in-out infinite reverse}
+  @keyframes apung{
+    0%,100%{transform:translateY(0) rotate(0)}
+    50%{transform:translateY(-16px) rotate(9deg)}
+  }
+
+  main{position:relative; z-index:1; width:100%; max-width:560px; text-align:center;
+       padding-top:clamp(38px,8vh,72px)}
+
+  /* ---------------- hero ---------------- */
+  .mark{width:40px;height:40px;margin:0 auto 12px;display:block}
+  .script{
+    font-family:var(--script); color:var(--clover);
+    font-size:clamp(54px,15vw,84px); line-height:.9; display:block;
+  }
+  .sub{
+    font-family:var(--display); font-weight:800;
+    font-size:clamp(10px,2.5vw,12px); letter-spacing:.4em;
+    text-transform:uppercase; color:var(--plum); margin-top:16px;
+    text-indent:.4em;            /* imbangi letter-spacing agar tetap di tengah */
+  }
+  .garis{
+    width:60px;height:1.5px;margin:20px auto 0;
+    background:linear-gradient(90deg,transparent,var(--clover),transparent);
+  }
+  .tagline{
+    margin:20px auto 0; color:var(--muted); font-size:15.5px;
+    line-height:1.7; max-width:29ch; font-style:italic;
+  }
+
+  /* ---------------- tumpukan strip ---------------- */
+  .panggung{position:relative; height:280px; margin:44px auto 0; width:270px}
+  .strip{
+    position:absolute; width:122px; padding:9px 9px 22px;
+    background:var(--paper); border:1px solid var(--line); border-radius:9px;
+    box-shadow:0 22px 42px -22px rgba(59,46,56,.6);
+  }
+  .strip .foto{aspect-ratio:5/4; border-radius:3px; margin-bottom:7px}
+  .strip .kaki{font-family:var(--script); color:var(--clover); font-size:13px; margin-top:9px}
+
+  .strip.blk{left:6px; top:20px; transform:rotate(-9deg); opacity:.92}
+  .strip.blk .foto:nth-child(1){background:linear-gradient(150deg,var(--peri),#c8d4e6)}
+  .strip.blk .foto:nth-child(2){background:linear-gradient(150deg,#cfe0ef,var(--peri))}
+  .strip.blk .foto:nth-child(3){background:linear-gradient(150deg,var(--peri),var(--plum))}
+
+  .strip.dpn{right:2px; top:0; transform:rotate(5deg); animation:goyang 7s ease-in-out infinite}
+  .strip.dpn .foto:nth-child(1){background:linear-gradient(150deg,var(--blush),#f4c9d8)}
+  .strip.dpn .foto:nth-child(2){background:linear-gradient(150deg,var(--mint),#9ad9c8)}
+  .strip.dpn .foto:nth-child(3){background:linear-gradient(150deg,#dfe6bb,var(--clover))}
+  @keyframes goyang{
+    0%,100%{transform:rotate(5deg) translateY(0)}
+    50%{transform:rotate(3deg) translateY(-9px)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .strip.dpn{animation:none}
+    .hias{animation:none}
+  }
+
+  /* ---------------- langkah ---------------- */
+  .langkah{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+    margin:48px auto 0; max-width:470px; position:relative;
+  }
+  .langkah::before{                 /* garis putus penghubung */
+    content:""; position:absolute; top:31px; left:16%; right:16%; height:1px;
+    background-image:linear-gradient(90deg,var(--line) 50%,transparent 50%);
+    background-size:7px 1px;
+  }
+  .kartu{
+    background:var(--paper); border:1px solid var(--line); border-radius:15px;
+    padding:18px 13px 16px; position:relative;
+  }
+  .no{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--clover); color:#fff;
+    font-family:var(--display); font-weight:800; font-size:12px;
+    /* Angka benar-benar di tengah: flex + line-height:1 + TANPA letter-spacing.
+       letter-spacing menambah spasi SESUDAH karakter, jadi angkanya bergeser
+       ke kiri — itu penyebab angka terlihat tidak center sebelumnya. */
+    display:flex; align-items:center; justify-content:center;
+    line-height:1; letter-spacing:0;
+    margin:0 auto 11px;
+    box-shadow:0 6px 14px -6px rgba(174,175,78,1);
+  }
+  .kartu h3{
+    font-family:var(--display); font-weight:700; font-size:11px;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--plum); margin-bottom:6px;
+  }
+  .kartu p{font-size:12.5px; line-height:1.55; color:var(--muted)}
+
+  /* ---------------- tombol ---------------- */
+  .masuk{
+    display:inline-flex; align-items:center; gap:10px;
+    margin-top:44px; text-decoration:none;
+    background:var(--clover); color:#fff;
+    font-family:var(--body); font-weight:700; font-size:17px;
+    padding:18px 50px; border-radius:999px; letter-spacing:.03em;
+    box-shadow:0 16px 32px -14px rgba(174,175,78,1);
+    transition:transform .14s, box-shadow .2s;
+  }
+  .masuk:hover{transform:translateY(-2px); box-shadow:0 20px 38px -14px rgba(174,175,78,1)}
+  .masuk:active{transform:translateY(0)}
+  .masuk svg{width:17px;height:17px;flex:0 0 auto}
+  .catatan{
+    margin-top:15px; font-family:var(--mono); font-size:11px;
+    letter-spacing:.08em; color:var(--muted);
+  }
+
+  .beli{
+    margin:30px auto 0; padding:17px 18px; max-width:400px;
+    background:linear-gradient(150deg,rgba(249,228,235,.62),rgba(134,242,236,.3));
+    border:1px solid var(--line); border-radius:15px;
+    font-size:13px; color:var(--ink); line-height:1.65; display:none;
+  }
+  .beli .harga{font-family:var(--display); font-weight:800; font-size:20px; color:var(--plum); margin-bottom:4px}
+  .beli .tautan{display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-top:12px}
+  .beli a{
+    text-decoration:none; background:var(--plum); color:#fff;
+    padding:9px 15px; border-radius:9px; font-size:12.5px; font-weight:700;
+  }
+  .beli a.wa{background:var(--clover)}
+
+  footer{
+    position:relative; z-index:1;
+    margin-top:52px; color:var(--muted); font-size:11px;
+    font-family:var(--mono); letter-spacing:.05em; line-height:1.9; text-align:center;
+  }
+  footer .fs{font-family:var(--script); font-size:20px; color:var(--clover); letter-spacing:0}
+
+  :is(a,button):focus-visible{outline:3px solid var(--clover); outline-offset:3px}
+
+  @media (max-width:520px){
+    body{padding:0 16px 44px}
+    .panggung{width:240px; height:262px}
+    .strip{width:110px}
+    .langkah{grid-template-columns:1fr; gap:9px; max-width:340px}
+    .langkah::before{display:none}
+    .kartu{display:flex; align-items:center; gap:14px; text-align:left; padding:14px 16px}
+    .no{margin:0; flex:0 0 auto}
+    .hias.a,.hias.c{display:none}
+    .masuk{width:100%; justify-content:center; padding:18px 20px}
+  }
+</style>
+</head>
+<body>
+
+<svg class="hias a" viewBox="0 0 40 40" aria-hidden="true"><use href="#clover"/></svg>
+<svg class="hias b" viewBox="0 0 40 40" aria-hidden="true"><use href="#clover"/></svg>
+<svg class="hias c" viewBox="0 0 40 40" aria-hidden="true"><use href="#clover"/></svg>
+<svg class="hias d" viewBox="0 0 40 40" aria-hidden="true"><use href="#clover"/></svg>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="clover" viewBox="0 0 40 40">
+    <g fill="#AEAF4E">
+      <path d="M20 19c-2.6-3-7.5-4.4-9.6-2.3-2 2-.8 6.6 2.4 8 2.6 1.1 5.8.3 7.2-1.4z"/>
+      <path d="M20 19c3-2.6 4.4-7.5 2.3-9.6-2-2-6.6-.8-8 2.4-1.1 2.6-.3 5.8 1.4 7.2z" opacity=".88"/>
+      <path d="M20 19c2.6 3 7.5 4.4 9.6 2.3 2-2 .8-6.6-2.4-8-2.6-1.1-5.8-.3-7.2 1.4z" opacity=".94"/>
+      <path d="M20 19c-3 2.6-4.4 7.5-2.3 9.6 2 2 6.6.8 8-2.4 1.1-2.6.3-5.8-1.4-7.2z" opacity=".82"/>
+    </g>
+    <path d="M20 21c1.5 4 1.8 8 1.4 12" stroke="#8E8F3A" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<main>
+  <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><use href="#clover"/></svg>
+
+  <h1>
+    <span class="script">One Strip Clover</span>
+    <span class="sub">Photobox Digital</span>
+  </h1>
+
+  <div class="garis"></div>
+  <p class="tagline">One strip, one memory, one lucky charm.</p>
+
+  <div class="panggung" aria-hidden="true">
+    <div class="strip blk">
+      <div class="foto"></div><div class="foto"></div><div class="foto"></div>
+      <div class="kaki">One Strip Clover</div>
+    </div>
+    <div class="strip dpn">
+      <div class="foto"></div><div class="foto"></div><div class="foto"></div>
+      <div class="kaki">One Strip Clover</div>
+    </div>
+  </div>
+
+  <div class="langkah">
+    <div class="kartu">
+      <div class="no">1</div>
+      <div><h3>Berpose</h3><p>3 foto berturut-turut, hitung mundur 3 detik</p></div>
+    </div>
+    <div class="kartu">
+      <div class="no">2</div>
+      <div><h3>Pilih gaya</h3><p>Bingkai &amp; filter, stripnya jadi seketika</p></div>
+    </div>
+    <div class="kartu">
+      <div class="no">3</div>
+      <div><h3>Simpan</h3><p>Unduh, atau cetakan asli dikirim ke rumah</p></div>
+    </div>
+  </div>
+
+  <a class="masuk" href="/booth">
+    Masuk ke Photobox
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M5 12h13M13 6l6 6-6 6"/>
+    </svg>
+  </a>
+  <p class="catatan">GRATIS DICOBA · TANPA DAFTAR AKUN</p>
+
+  <div class="beli" id="beliBox">
+    <div class="harga" id="harga"></div>
+    <div>Buka bingkai eksklusif, unduhan HD, &amp; cetakan asli dikirim ke rumahmu.</div>
+    <div class="tautan" id="beliLinks"></div>
+  </div>
+</main>
+
+<footer>
+  <span class="fs">One Strip Clover</span><br>
+  One strip, one memory, one lucky charm.
+</footer>
+
+<script>
+/* Harga & tautan toko diambil dari .env lewat /api/config — satu sumber,
+   sama dengan yang dipakai halaman photobox. */
+(async () => {
+  try {
+    const r = await fetch("/api/config");
+    const d = await r.json();
+    if (!d || !d.ok || !d.hasShop) return;
+
+    const tautan = [
+      ["TikTok Shop", d.shops.tiktok, ""],
+      ["Tokopedia", d.shops.tokopedia, ""],
+      ["Shopee", d.shops.shopee, ""],
+    ].filter(([, u]) => u);
+
+    if (d.shops.whatsapp) {
+      const pesan = encodeURIComponent("Halo, saya mau beli kode One Strip Clover");
+      tautan.push(["💬 WhatsApp", "https://wa.me/" + d.shops.whatsapp + "?text=" + pesan, "wa"]);
+    }
+    if (!tautan.length) return;
+
+    if (d.price) document.getElementById("harga").textContent = d.price;
+    document.getElementById("beliLinks").innerHTML = tautan
+      .map(function (t) {
+        return '<a class="' + t[2] + '" href="' + t[1] +
+               '" target="_blank" rel="noopener noreferrer">' + t[0] + "</a>";
+      })
+      .join("");
+    document.getElementById("beliBox").style.display = "block";
+  } catch (e) {
+    /* halaman tetap tampil normal walau setelan toko gagal dimuat */
+  }
+})();
+</script>
+</body>
+</html>
