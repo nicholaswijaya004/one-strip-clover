@@ -547,15 +547,32 @@ if($("uploadInput")) $("uploadInput").addEventListener("change", async (e)=>{
   if(files.length===0) return;
   S.photos=[];
   for(const f of files){
-    S.photos.push(await new Promise((res)=>{
+    const mentah = await new Promise((res)=>{
       const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f);
-    }));
+    });
+    try{ S.photos.push(await normalkanFoto(mentah)); }
+    catch(err){ toast("Foto ini tidak bisa dibaca browser. Coba foto lain (JPG/PNG) ya.", 5000); return; }
   }
   while(S.photos.length<SHOTS) S.photos.push(S.photos[S.photos.length-1]); // lengkapi kalau kurang
   S.takenAt=new Date().toISOString();
   composeStrip();
   e.target.value="";
 });
+
+/* Foto dari galeri HP bisa 48 MP / 15 MB / WebP. Dikirim mentah = unggahan
+   lambat di data seluler, dan ditolak server (batas 24 MP, hanya JPEG/PNG —
+   pengaman anti bom dekompresi). Jadi SELALU di-encode ulang di browser:
+   JPEG, sisi terpanjang maks. 2400 px (lebih dari cukup untuk cetak 300 dpi). */
+async function normalkanFoto(dataUrl){
+  const im = await loadImg(dataUrl);
+  const MAKS = 2400;
+  const skala = Math.min(1, MAKS / Math.max(im.naturalWidth, im.naturalHeight));
+  const c=document.createElement("canvas");
+  c.width=Math.max(1, Math.round(im.naturalWidth*skala));
+  c.height=Math.max(1, Math.round(im.naturalHeight*skala));
+  c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.92);
+}
 
 /* =========================== strip composer =========================== */
 function loadImg(src){return new Promise((res,rej)=>{
