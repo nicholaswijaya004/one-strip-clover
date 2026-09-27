@@ -14,7 +14,7 @@ async function api(path, body){
   const r=await fetch(path,{method:"POST",
     headers:{"Content-Type":"application/json","x-admin-key":KEY},
     body:JSON.stringify(body||{})});
-  let data={};
+  let data;
   try{ data=await r.json(); }catch(e){ data={ok:false,error:"BAD_RESPONSE"}; }
   return {status:r.status, data};
 }
@@ -313,7 +313,7 @@ $("unbindBtn").onclick=async ()=>{
 };
 
 /* ---------------------- generator kode ---------------------- */
-let genForChatbot=true, lastBatch=[];
+let genForChatbot=true;
 function renderGenMode(){
   $("genChatbot").classList.toggle("on",genForChatbot);
   $("genAdmin").classList.toggle("on",!genForChatbot);
@@ -335,7 +335,6 @@ $("genBtn").onclick=async ()=>{
   $("genBtn").disabled=false; $("genBtn").textContent="⚙ Generate kode";
 
   if(data.ok){
-    lastBatch=data.codes;
     $("genOut").value=data.codes.join("\n");
     $("genResult").style.display="block";
     m.textContent=`✓ ${data.codes.length} kode dibuat (${data.forChatbot?"pool chatbot":"stok admin"}).`;

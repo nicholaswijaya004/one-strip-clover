@@ -12,10 +12,12 @@
 
 // --- cek versi Node ---
 const _major = Number(process.versions.node.split(".")[0]);
-if (_major < 18) {
+// Node 18 & 20 sudah end-of-life (tidak dapat patch keamanan lagi).
+// googleapis (unggah Drive) juga mensyaratkan Node 22+.
+if (_major < 22) {
   console.error(
     `\n❌ Node.js kamu versi ${process.versions.node}, terlalu lama.\n` +
-      `   Butuh Node 18 atau lebih baru (disarankan LTS 22).\n\n` +
+      `   Butuh Node 22 atau lebih baru (LTS).\n\n` +
       `   Cara update di Mac:\n` +
       `     1. Download installer LTS dari https://nodejs.org  (paling gampang), ATAU\n` +
       `     2. brew install node   (kalau pakai Homebrew), ATAU\n` +
@@ -446,8 +448,7 @@ app.post(
   // Rate limit per IP dibuat longgar (jatah sesungguhnya dijaga per kode)
   // dan dijalankan largeBodyGate SEBELUM body di-parse.
   async (req, res) => {
-  let { photos, contact, note, consent, name, email, wa, address } =
-    req.body || {};
+  const { photos, consent } = req.body || {};
 
   // ===== WAJIB PREMIUM =====
   // Dicek di server, bukan cuma di browser — tombol yang disembunyikan
@@ -491,8 +492,7 @@ app.post(
     req.body[k] = potong(req.body[k], LIMIT.TEKS_PENDEK);
   }
 
-  ({ name, note, address, email, wa, contact } = req.body);
-  const { style, reason, takenAt } = req.body;
+  const { name, note, address, email, wa, contact, style, reason, takenAt } = req.body;
   const invalid = fmt.validateOrder({ ...req.body, consent, photos, name, email, wa, contact, address });
   if (invalid) return res.status(HTTP.BAD_REQUEST).json({ ok: false, error: invalid });
 
@@ -518,11 +518,8 @@ app.post(
 
   try {
 
-  /* --- label bersama untuk nama folder Drive & subject email ---
-     Format: Nama - kontak - tanggal foto - kode premium
-     contoh: Daniel W - 08121234567 - 2026-07-28 18.07 - OSC-K3PQ7M   */
+  // Label folder Drive & subject email dibentuk di lib/delivery.js
   const takenLabel = fmt.takenLabel(takenAt);
-  const LABEL = fmt.buildLabel({ name, email, wa, contact, takenAt, code });
   const REF = fmt.buildRef(req.rid);
 
   // Objek pesanan — bentuk yang sama dipakai jalur langsung & antrean

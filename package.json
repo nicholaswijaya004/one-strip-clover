@@ -15,18 +15,27 @@
     "template": "node scripts/make-template.js",
     "sim": "node scripts/simulasi-browser.js",
     "test:coverage": "node --test --experimental-test-coverage --test-coverage-exclude=\"test/**\" --test-coverage-exclude=\"scripts/**\" --test-coverage-exclude=\"backend-go/**\" --test-coverage-exclude=\"frontend-react/**\" --test-coverage-lines=85 --test-coverage-functions=85 --test-coverage-branches=70 test/*.test.js",
-    "ci": "npm test && npm run test:coverage && npm run sim"
+    "ci": "npm run lint && npm run typecheck && npm test && npm run test:coverage && npm run sim && npm run smoke",
+    "lint": "eslint .",
+    "typecheck": "tsc -p frontend-react/tsconfig.json",
+    "smoke": "bash scripts/smoke-test.sh"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "googleapis": "^140.0.0",
-    "nodemailer": "^6.9.13"
+    "googleapis": "^182.0.0",
+    "nodemailer": "^10.0.10"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "optionalDependencies": {
     "@napi-rs/canvas": "^0.1.65"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "typescript": "^5.9.3"
   }
 }

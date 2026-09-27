@@ -6,12 +6,26 @@ name: Review oleh Claude
 # terpakai untuk keputusan produk, bukan mencari typo.
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+# Push beruntun ke PR yang sama → hanya review terakhir yang dijalankan
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   review:
-    name: Tinjau perubahan
+    name: review
+    # PR dari fork & Dependabot tidak mendapat secrets → lewati, jangan gagal
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]' &&
+      !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -19,11 +33,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # Claude perlu riwayat untuk membandingkan perubahan
 
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
@@ -47,11 +61,23 @@ jobs:
                - Apakah kegagalan pengiriman (email/Drive) bisa membuat foto
                  pembeli hilang tanpa jejak?
 
-            3. TES
+            3. XSS & CSP
+               - Teks dari server/pengguna yang masuk innerHTML WAJIB lewat esc().
+               - Tidak boleh ada <script> inline atau onclick="" di HTML —
+                 CSP melarangnya; skrip halaman ada di public/js/.
+
+            4. TES
                - Apakah perubahan logika disertai tes?
                - Apakah ada tes yang dihapus atau dilemahkan tanpa alasan?
 
-            4. KONSISTENSI
+            5. KETERSEDIAAN (website tidak boleh tumbang)
+               - Apakah ada input dari klien yang menentukan ukuran memori/CPU
+                 (lebar kanvas, jumlah item, panjang teks) tanpa dijepit?
+               - Apakah body besar di-parse SEBELUM otorisasi? (lihat
+                 largeBodyGate di lib/http/middleware.js)
+               - Panggilan jaringan (SMTP, Drive) tanpa timeout?
+
+            6. KONSISTENSI
                - Ukuran strip/cetak harus tetap 51 x 152 mm di atas A4.
                - Penggambar strip HANYA boleh ada di
                  public/shared/strip-renderer.js (dipakai browser & server).

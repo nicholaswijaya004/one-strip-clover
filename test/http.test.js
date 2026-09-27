@@ -6,7 +6,6 @@ require("./_setup").pakaiDataSementara();
  * bisa ada tapi tidak terpasang di urutan yang benar. Di sini yang diuji
  * adalah PERILAKU yang dilihat penyerang: status, header, dan isi respons.
  */
-const dir = require("./_setup").pakaiDataSementara();
 process.env.ADMIN_KEY = "kunci-admin-uji-yang-panjang-sekali";
 process.env.SESSION_SECRET = "rahasia-sesi-uji-yang-panjangnya-lebih-dari-32";
 delete process.env.SMTP_HOST;
@@ -44,7 +43,7 @@ async function kirim(pathname, { method = "POST", body, headers = {}, ip = ipBar
     },
     body: raw !== undefined ? raw : body !== undefined ? JSON.stringify(body) : undefined,
   });
-  let data = null;
+  let data;
   const teks = await res.text();
   try { data = JSON.parse(teks); } catch { data = teks; }
   return { status: res.status, headers: res.headers, data };

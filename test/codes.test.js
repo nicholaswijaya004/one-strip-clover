@@ -2,7 +2,6 @@ require("./_setup").pakaiDataSementara();
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const path = require("path");
 
 // DATA_DIR sudah diarahkan ke folder sementara oleh _setup, jadi tes ini
 // TIDAK PERNAH menyentuh data/codes.json asli. Tidak perlu backup-restore.

@@ -94,7 +94,6 @@ const S = {
 
 const FILTERS = StripRenderer.FILTERS;
 
-const C = StripRenderer.C; // palet brand, satu sumber kebenaran
 
 // Daftar bingkai & filter diambil dari modul bersama — kalau ditulis ulang
 // di sini, suatu hari daftarnya beda dengan yang dipakai server.
@@ -631,30 +630,12 @@ async function composeStrip(opts){
   }
 }
 
-/* Lembar cetak A4 kini dibuat DI SERVER sebagai PDF (lib/pdf.js) —
-   ukuran cetaknya pasti dan tidak bergantung pada kanvas browser.
-   Fungsi di bawah dipertahankan kalau suatu saat perlu pratinjau A4. */
-async function composeA4(){
-  try{
-    const images=[];
-    for(let i=0;i<SHOTS;i++) images.push(await loadImg(S.photos[i]));
-    // 1754 px lebar ≈ 150 dpi. Sengaja tidak 300 dpi (2480 px) karena
-    // kanvas 2480x3508 = 8,7 juta piksel bisa gagal di Safari iOS lama.
-    // Server akan membuat ulang versi 300 dpi kalau tersedia.
-    const size=StripRenderer.a4Size(1754);
-    const c=document.createElement("canvas");
-    c.width=size.width; c.height=size.height;
-    const ctx=c.getContext("2d");
-    StripRenderer.drawA4Sheet(ctx, images, {
-      a4Width:size.width, copies:1, stripWidth:800, aspect:ASPECT,
-      frameId:FRAMES[S.frameIdx].id, filter:S.filter, watermark:false,
-      dateText:new Date().toLocaleDateString("id-ID",
-        {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
-    });
-    return c.toDataURL("image/jpeg",0.92);
-  }catch(e){ console.error(e); return null; }
-}
+/* Lembar cetak A4 dibuat DI SERVER sebagai PDF (lib/pdf.js) — ukuran
+   cetaknya pasti dan tidak bergantung pada kanvas browser. */
 
+// Dulu tidak dideklarasikan → jadi variabel global tak sengaja (dan akan
+// melempar ReferenceError begitu skrip dijalankan dalam mode strict).
+let retakeArmed=false, retakeTimer=null;
 $("retakeBtn").onclick=()=>{
   if(!retakeArmed){
     // konfirmasi dua langkah: sekali ketuk = tanya, ketuk lagi = benar-benar hapus

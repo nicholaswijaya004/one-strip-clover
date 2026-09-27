@@ -174,11 +174,9 @@ global.matchMedia = global.window.matchMedia;
 global.scrollTo = () => {};
 
 // ---- jalankan skrip halaman (berkas terpisah — CSP melarang skrip inline) ----
-assert_skrip_eksternal: {
-  if (/<script>(?!<\/script>)/.test(html)) {
-    console.log("❌ booth.html masih punya <script> inline — CSP akan memblokirnya");
-    process.exit(1);
-  }
+if (/<script>(?!<\/script>)/.test(html)) {
+  console.log("❌ booth.html masih punya <script> inline — CSP akan memblokirnya");
+  process.exit(1);
 }
 const script = fs.readFileSync(path.join(ROOT, "public", "js", "booth.js"), "utf8");
 
