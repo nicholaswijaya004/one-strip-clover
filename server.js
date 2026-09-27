@@ -559,13 +559,7 @@ app.post(
 
   const { ok: anyOk, results, errors } = await delivery.deliver(orderPayload, { log });
 
-  const emailConfigured = !!process.env.SMTP_HOST;
-  const driveConfigured = !!(
-    process.env.GOOGLE_CLIENT_ID &&
-    process.env.GOOGLE_REFRESH_TOKEN &&
-    process.env.DRIVE_FOLDER_ID
-  );
-  if (!emailConfigured && !driveConfigured) {
+  if (!delivery.emailConfigured() && !delivery.driveConfigured()) {
     log.error("delivery.not_configured", {
       rid: req.rid, hint: "isi SMTP_* di .env lalu restart server",
     });
@@ -602,7 +596,7 @@ app.post(
     }
     log.order("studio.order", {
       rid: req.rid, code, name, contact: email || wa,
-      via: `${results.email ? "email" : ""}${results.drive ? "+drive" : ""}`,
+      via: `${results.email ? `email(${results.emailVia})` : ""}${results.drive ? "+drive" : ""}`,
       quota: `${n}/${MAX_SUBMISSIONS}`,
     });
     log.orderBlock("PESANAN STUDIO", {
@@ -615,7 +609,7 @@ app.post(
       "Catatan": note,
       "Gaya": style,
       "Foto diambil": takenLabel + " WIB",
-      "Terkirim ke": `${results.email ? "email " : ""}${results.drive ? "drive" : ""}`.trim(),
+      "Terkirim ke": `${results.email ? `email (${results.emailVia}) ` : ""}${results.drive ? "drive" : ""}`.trim(),
       "Request ID": req.rid,
       "No. Pesanan": REF,
     });
@@ -653,8 +647,8 @@ app.get(
       const st = codeStats(codes);
       res.json({
         ...dasar,
-        email: !!process.env.SMTP_HOST,
-        drive: !!(process.env.GOOGLE_REFRESH_TOKEN && process.env.DRIVE_FOLDER_ID),
+        email: delivery.emailConfigured(),
+        drive: delivery.driveConfigured(),
         render: render.tersedia(),
         chatbotStock: st.chatbotStock,
         pendingOrders: queue.stats().menunggu,
@@ -755,11 +749,11 @@ function start() {
       renderServer: rs.siap
         ? `ON (font: ${rs.fonts.join(",") || "bawaan sistem"})`
         : "OFF — unduhan premium memakai render browser",
-      email: process.env.SMTP_HOST ? `ON (${process.env.SMTP_HOST} → ${process.env.STUDIO_EMAIL})` : "OFF",
-      drive:
-        process.env.GOOGLE_REFRESH_TOKEN && process.env.DRIVE_FOLDER_ID
-          ? "ON"
-          : "OFF",
+        // Hanya NAMA jalur yang dicetak — alamat email & kunci tidak masuk log
+      email: delivery.emailConfigured()
+        ? `ON (${[process.env.RESEND_API_KEY && "resend", process.env.SMTP_HOST && "smtp"].filter(Boolean).join(" → ")})`
+        : "OFF",
+      drive: delivery.driveConfigured() ? "ON" : "OFF",
       admin: process.env.ADMIN_KEY ? "ON" : "OFF (halaman /admin tidak bisa dipakai)",
       sessionSecret: process.env.SESSION_SECRET ? "ON" : "OFF (token hangus tiap restart)",
       trustProxy: String(app.get("trust proxy")),
@@ -776,8 +770,10 @@ function start() {
 
     log.info("server.start", { port: PORT, ...cfg });
 
-    if (!process.env.SMTP_HOST)
-      log.warn("config.no_email", { hint: "isi SMTP_* di .env, fitur Kirim ke Studio akan gagal" });
+    if (!delivery.emailConfigured())
+      log.warn("config.no_email", { hint: "isi RESEND_API_KEY (atau SMTP_*) + STUDIO_EMAIL — email pesanan studio nonaktif" });
+    if (!delivery.driveConfigured())
+      log.warn("config.no_drive", { hint: "Google Drive nonaktif — pesanan hanya lewat jalur email" });
     if ((st.chatbotStock || 0) === 0)
       log.warn("config.no_chatbot_codes", {
         hint: "buat batch 'Untuk chatbot' di /admin — pembeli baru tidak akan dapat kode",

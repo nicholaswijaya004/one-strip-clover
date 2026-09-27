@@ -142,7 +142,8 @@ test("email: balasan diarahkan ke pembeli kalau emailnya valid", () => {
     path.join(__dirname, "..", "lib", "delivery.js"), "utf8"
   );
   assert.ok(delivery.includes("replyTo"), "harus mengatur replyTo");
-  assert.ok(delivery.includes("balasKe"), "replyTo diambil dari email pembeli");
+  // Perilakunya (reply-to = email pembeli yang valid) diuji sungguhan di test/email.test.js
+  assert.ok(delivery.includes("fmt.isEmail(emailPembeli)"), "replyTo diambil dari email pembeli yang valid");
 });
 
 test("email: email pembeli tidak valid → tanpa replyTo (tidak error)", () => {
