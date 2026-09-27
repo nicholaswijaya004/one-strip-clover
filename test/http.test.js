@@ -6,8 +6,10 @@ require("./_setup").pakaiDataSementara();
  * bisa ada tapi tidak terpasang di urutan yang benar. Di sini yang diuji
  * adalah PERILAKU yang dilihat penyerang: status, header, dan isi respons.
  */
-process.env.ADMIN_KEY = "kunci-admin-uji-yang-panjang-sekali";
-process.env.SESSION_SECRET = "rahasia-sesi-uji-yang-panjangnya-lebih-dari-32";
+// Rahasia uji dibuat acak saat tes jalan — tidak ada nilai rahasia tertulis
+// di repo (pemindai rahasia di CI benar menolak literal seperti itu).
+process.env.ADMIN_KEY = require("crypto").randomBytes(24).toString("hex");
+process.env.SESSION_SECRET = require("crypto").randomBytes(32).toString("hex");
 delete process.env.SMTP_HOST;
 
 const test = require("node:test");
