@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -27,6 +28,7 @@ type Handler struct {
 	redeem *usecase.RedeemCode
 	submit *usecase.SubmitOrder
 	log    usecase.Logger
+	stats  statsSource
 }
 
 func NewHandler(r *usecase.RedeemCode, s *usecase.SubmitOrder, log usecase.Logger) *Handler {
@@ -173,4 +175,32 @@ func requestIDFrom(r *http.Request) string {
 		return v
 	}
 	return time.Now().Format("150405.000")
+}
+
+// ------------------------------------------------------ /api/admin/stats
+
+// statsSource cukup satu method — handler tidak perlu tahu seluruh repository
+// (Interface Segregation).
+type statsSource interface {
+	Stats(ctx context.Context) (usecase.CodeStats, error)
+}
+
+// WithStats memasang sumber statistik untuk AdminStats.
+func (h *Handler) WithStats(s statsSource) *Handler {
+	h.stats = s
+	return h
+}
+
+func (h *Handler) AdminStats(w http.ResponseWriter, r *http.Request) {
+	if h.stats == nil {
+		writeJSON(w, http.StatusNotImplemented, errorBody("NOT_CONFIGURED", "statistik belum dipasang"))
+		return
+	}
+	st, err := h.stats.Stats(r.Context())
+	if err != nil {
+		h.log.Error("admin.stats_failed", map[string]any{"err": err.Error()})
+		writeJSON(w, http.StatusInternalServerError, errorBody("SERVER_ERROR", "terjadi kesalahan"))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "stats": st})
 }

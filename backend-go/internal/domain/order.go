@@ -70,16 +70,16 @@ func NewOrder(
 	}, nil
 }
 
-func (o *Order) Ref() OrderRef            { return o.ref }
-func (o *Order) Code() CodeID             { return o.code }
-func (o *Order) Contact() ContactDetails  { return o.contact }
-func (o *Order) Address() Address         { return o.address }
-func (o *Order) Note() string             { return o.note }
-func (o *Order) Style() string            { return o.style }
-func (o *Order) Photos() []Photo          { return o.photos }
-func (o *Order) Strip() *Strip            { return o.strip }
-func (o *Order) TakenAt() time.Time       { return o.takenAt }
-func (o *Order) CreatedAt() time.Time     { return o.createdAt }
+func (o *Order) Ref() OrderRef           { return o.ref }
+func (o *Order) Code() CodeID            { return o.code }
+func (o *Order) Contact() ContactDetails { return o.contact }
+func (o *Order) Address() Address        { return o.address }
+func (o *Order) Note() string            { return o.note }
+func (o *Order) Style() string           { return o.style }
+func (o *Order) Photos() []Photo         { return o.photos }
+func (o *Order) Strip() *Strip           { return o.strip }
+func (o *Order) TakenAt() time.Time      { return o.takenAt }
+func (o *Order) CreatedAt() time.Time    { return o.createdAt }
 
 // FolderLabel: "Nama - kontak - 2026-08-19 18.07 - OSC-ABC123"
 // Dipakai untuk nama folder Drive DAN subject email — satu sumber kebenaran,

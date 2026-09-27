@@ -168,17 +168,17 @@ func (c *AccessCode) ConsumeOrder(ref string, now time.Time) error {
 
 // ------------------------------------------------------------- Pembacaan
 
-func (c *AccessCode) ID() CodeID         { return c.id }
-func (c *AccessCode) State() CodeState   { return c.state }
-func (c *AccessCode) MaxOrders() int     { return c.maxOrders }
-func (c *AccessCode) OrdersUsed() int    { return c.ordersUsed }
-func (c *AccessCode) LastRef() string    { return c.lastRef }
-func (c *AccessCode) IssuedTo() string   { return c.issuedTo }
-func (c *AccessCode) CreatedAt() time.Time { return c.createdAt }
+func (c *AccessCode) ID() CodeID             { return c.id }
+func (c *AccessCode) State() CodeState       { return c.state }
+func (c *AccessCode) MaxOrders() int         { return c.maxOrders }
+func (c *AccessCode) OrdersUsed() int        { return c.ordersUsed }
+func (c *AccessCode) LastRef() string        { return c.lastRef }
+func (c *AccessCode) IssuedTo() string       { return c.issuedTo }
+func (c *AccessCode) CreatedAt() time.Time   { return c.createdAt }
 func (c *AccessCode) IssuedAt() *time.Time   { return c.issuedAt }
 func (c *AccessCode) RedeemedAt() *time.Time { return c.redeemedAt }
 
-func (c *AccessCode) IsSpent() bool  { return c.ordersUsed >= c.maxOrders }
+func (c *AccessCode) IsSpent() bool { return c.ordersUsed >= c.maxOrders }
 func (c *AccessCode) OrdersLeft() int {
 	left := c.maxOrders - c.ordersUsed
 	if left < 0 {

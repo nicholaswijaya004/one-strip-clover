@@ -28,8 +28,8 @@ type HMACService struct {
 }
 
 func NewHMACService(secret string, ttl time.Duration) (*HMACService, error) {
-	if len(secret) < 16 {
-		return nil, errors.New("SESSION_SECRET minimal 16 karakter")
+	if len(secret) < 32 {
+		return nil, errors.New("SESSION_SECRET minimal 32 karakter")
 	}
 	return &HMACService{secret: []byte(secret), ttl: ttl}, nil
 }

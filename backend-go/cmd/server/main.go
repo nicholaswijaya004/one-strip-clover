@@ -41,6 +41,9 @@ func main() {
 	repo := repository.NewJSONFile(cfg.CodesPath)
 	// ↑ ganti baris ini dengan repository.NewPostgres(db) dan selesai.
 
+	if len(cfg.SessionSecret) < 32 {
+		log.Fatal("SESSION_SECRET wajib diisi, minimal 32 karakter (openssl rand -hex 32)")
+	}
 	tokens, err := token.NewHMACService(cfg.SessionSecret, cfg.SessionTTL)
 	if err != nil {
 		log.Fatalf("konfigurasi token: %v", err)
@@ -78,7 +81,7 @@ func main() {
 	submitUC := usecase.NewSubmitOrder(repo, tokens, deliver, locks, clock, logger)
 
 	// ---- lapisan transport: HTTP ----
-	h := httpx.NewHandler(redeemUC, submitUC, logger)
+	h := httpx.NewHandler(redeemUC, submitUC, logger).WithStats(repo)
 
 	publicRL := httpx.NewRateLimiter(15*time.Minute, 12)
 	uploadRL := httpx.NewRateLimiter(time.Hour, 10)
@@ -226,7 +229,9 @@ func newMemoryLocks() *memoryLocks {
 func (l *memoryLocks) Acquire(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if t, ok := l.held[key]; ok && time.Since(t) < 2*time.Minute {
+	// Lebih lama dari timeout SMTP (45 dtk) — kunci tidak boleh dianggap basi
+	// saat pesanan yang sama MASIH dikirim (pelajaran dari versi Node).
+	if t, ok := l.held[key]; ok && time.Since(t) < 5*time.Minute {
 		return false
 	}
 	l.held[key] = time.Now()

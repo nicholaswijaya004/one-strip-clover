@@ -35,9 +35,9 @@ var (
 	ErrTooLong         = errors.New("input terlalu panjang")
 
 	// Pesanan
-	ErrNoPhotos      = errors.New("tidak ada foto")
-	ErrTooManyPhotos = errors.New("foto terlalu banyak")
-	ErrNoConsent     = errors.New("persetujuan belum dicentang")
-	ErrDeliveryFailed = errors.New("pengiriman ke studio gagal")
+	ErrNoPhotos          = errors.New("tidak ada foto")
+	ErrTooManyPhotos     = errors.New("foto terlalu banyak")
+	ErrNoConsent         = errors.New("persetujuan belum dicentang")
+	ErrDeliveryFailed    = errors.New("pengiriman ke studio gagal")
 	ErrAlreadyProcessing = errors.New("pesanan untuk kode ini sedang diproses")
 )
