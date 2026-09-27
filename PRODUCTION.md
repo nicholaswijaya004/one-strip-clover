@@ -11,7 +11,7 @@ Perbaikan keamanan yang sudah dikerjakan ada di `SECURITY.md`.
 |---|---|---|
 | 1 | **`.env` terisi lengkap** | Jalankan `npm start`, lihat ringkasan KONFIGURASI. Semua harus `ON` |
 | 1a | **`NODE_ENV=production`** | Dengan ini server MENOLAK hidup kalau rahasia kosong/lemah — deploy gagal terlihat, bukan diam-diam tidak aman |
-| 2 | **`SESSION_SECRET` ≥ 32 karakter, beda dari `ADMIN_KEY`** | `openssl rand -hex 32`. ⚠️ Sebelumnya boleh kosong (jatuh ke `ADMIN_KEY`); sekarang WAJIB — isi SEBELUM deploy versi ini, atau server tidak mau hidup |
+| 2 | **`SESSION_SECRET` ≥ 32 karakter, beda dari `ADMIN_KEY`** | `openssl rand -hex 32`, simpan di Railway Variables (Sealed) — lihat bagian 1b. ⚠️ Sebelumnya boleh kosong (jatuh ke `ADMIN_KEY`); sekarang WAJIB — isi SEBELUM deploy versi ini, atau server tidak mau hidup |
 | 3 | **`ADMIN_KEY` acak ≥ 16 karakter** | `openssl rand -hex 24` |
 | 3a | **Node.js 22+** | Node 20 sudah end-of-life; `googleapis` mensyaratkan 22. Railway: set `NIXPACKS_NODE_VERSION=22` atau pakai `.nvmrc` (sudah ada) |
 | 3b | **`TRUST_PROXY` benar** | Railway/Render = `1` (bawaan). Tanpa proxy = `false` |
@@ -23,6 +23,63 @@ Perbaikan keamanan yang sudah dikerjakan ada di `SECURITY.md`.
 | 9 | **Link toko diisi** | `curl https://domainmu/api/config` → `hasShop:true` |
 | 10 | **Stok kode chatbot > 0** | Buka `/admin`, kotak STOK CHATBOT jangan 0 |
 | 11 | **Render server aktif** | `npm i @napi-rs/canvas` + taruh font di `assets/fonts/`. Startup harus menampilkan `renderServer: ON` |
+
+## 1b. Menyimpan rahasia (SESSION_SECRET, ADMIN_KEY, dll.)
+
+**Aturan utama:** nilai rahasia TIDAK PERNAH masuk git. Repo hanya berisi
+`.env.example` (templat kosong). Job `secret-scan` di CI menggagalkan PR
+yang berisi rahasia.
+
+Server membaca semua rahasia dari **environment variable**. Jadi tempat
+penyimpanannya bisa diganti kapan saja tanpa mengubah kode.
+
+### Di mana menyimpannya
+
+| Tempat | Isi |
+|---|---|
+| **Railway → service → Variables** | Rahasia PRODUKSI. Tandai yang sensitif sebagai **Sealed** — setelah disimpan, nilainya tidak bisa dilihat lagi (hanya bisa diganti) |
+| **Password manager** (1Password / Bitwarden) | SALINAN nilai produksi — variabel Sealed tidak bisa dibaca kembali |
+| **`.env` di laptop** | Nilai untuk coba-coba lokal saja (sudah di `.gitignore`) — JANGAN pakai nilai produksi |
+| **GitHub → Settings → Secrets and variables → Actions** | Rahasia untuk CI saja, mis. `ANTHROPIC_API_KEY` |
+
+### Yang wajib diisi di Railway
+
+| Variable | Cara membuat | Sealed? |
+|---|---|---|
+| `NODE_ENV` | `production` | tidak |
+| `SESSION_SECRET` | `openssl rand -hex 32` | **ya** |
+| `ADMIN_KEY` | `openssl rand -hex 24` — dibuat TERPISAH, harus beda dari `SESSION_SECRET` | **ya** |
+| `SMTP_PASS` | App Password Gmail / API key Brevo atau Resend | **ya** |
+| `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | dari `npm run auth` | **ya** |
+| `SMTP_HOST`, `SMTP_USER`, `STUDIO_EMAIL`, link toko, harga, dll. | lihat `.env.example` | tidak |
+
+Server produksi **menolak hidup** kalau `SESSION_SECRET` / `ADMIN_KEY`
+kosong, terlalu pendek, atau sama — deploy terlihat gagal di log Railway,
+bukan diam-diam tidak aman.
+
+### Mengganti (rotasi) rahasia
+
+| Rahasia | Kapan | Dampak |
+|---|---|---|
+| `ADMIN_KEY` | kapan saja; WAJIB kalau pernah dibagikan / orang keluar dari tim | cukup login `/admin` dengan kunci baru |
+| `SESSION_SECRET` | segera kalau dicurigai bocor; selain itu saat sepi | pembeli premium yang sedang aktif perlu memasukkan kode sekali lagi (masih dalam masa tenggang, tidak rugi) |
+| `SMTP_PASS`, token Google | kalau bocor / akun diganti | ganti di Railway, lalu `npm run test-email` |
+
+Langkah: buat nilai baru → ganti di Railway → Railway deploy ulang otomatis
+→ perbarui salinan di password manager.
+
+### Nanti, kalau perlu secret manager khusus
+
+Tidak perlu sekarang. Kalau suatu saat ada tim, beberapa lingkungan
+(staging + produksi), atau butuh log audit siapa mengubah apa:
+
+* **Doppler / Infisical** — sinkron langsung ke Railway, tanpa ubah kode.
+* **AWS Secrets Manager** — masuk akal HANYA kalau server pindah ke AWS
+  (ECS/EC2/Lambda) dan izinnya lewat IAM role. Di Railway justru menambah
+  satu rahasia lagi (AWS access key) yang harus disimpan di Railway juga.
+
+Karena server hanya membaca environment variable, perpindahan ke salah
+satunya **tidak butuh perubahan kode**.
 
 ## 2. Setelah live — rutinitas
 
