@@ -43,7 +43,7 @@ if (_major < 18) {
   process.exit(1);
 }
 
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const http = require("http");
 const { google } = require("googleapis");
 

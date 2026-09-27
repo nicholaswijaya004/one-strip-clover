@@ -22,7 +22,7 @@
  * SELALU jalankan tanpa --hapus dulu untuk melihat apa yang akan terjadi.
  */
 
-try { require("dotenv").config(); } catch (e) { /* dotenv opsional */ }
+try { require("dotenv").config({ quiet: true }); } catch (e) { /* dotenv opsional */ }
 const fs = require("fs");
 const path = require("path");
 

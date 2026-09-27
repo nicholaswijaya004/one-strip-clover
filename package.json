@@ -2,6 +2,26 @@
   "name": "one-strip-clover",
   "version": "1.0.0",
   "description": "One Strip Clover — photobox digital dengan kode akses sekali pakai",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "One Strip Clover",
+  "homepage": "https://github.com/nicholaswijaya004/one-strip-clover#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicholaswijaya004/one-strip-clover.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nicholaswijaya004/one-strip-clover/issues"
+  },
+  "keywords": [
+    "photobooth",
+    "photobox",
+    "photo-strip",
+    "camera",
+    "express",
+    "nodejs",
+    "indonesia"
+  ],
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
