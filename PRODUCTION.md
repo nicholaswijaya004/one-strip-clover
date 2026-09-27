@@ -88,7 +88,7 @@ memakai ulang `SESSION_SECRET`/`ADMIN_KEY` staging di produksi.
 | 8 | **Uji di iPhone & Android asli** | Terutama izin kamera & tombol unduh |
 | 9 | **Link toko diisi** | `curl https://domainmu/api/config` → `hasShop:true` |
 | 10 | **Stok kode chatbot > 0** | Buka `/admin`, kotak STOK CHATBOT jangan 0 |
-| 11 | **Render server aktif** | `npm i @napi-rs/canvas` + taruh font di `assets/fonts/`. Startup harus menampilkan `renderServer: ON` |
+| 11 | **Render server aktif** | `@napi-rs/canvas` & font brand sudah ikut. Startup harus menampilkan `renderServer: ON (font: Parisienne,Montserrat,IBM Plex Mono)` |
 
 ## 1b. Menyimpan rahasia (SESSION_SECRET, ADMIN_KEY, dll.)
 
