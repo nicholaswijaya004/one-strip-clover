@@ -5,6 +5,58 @@ Perbaikan keamanan yang sudah dikerjakan ada di `SECURITY.md`.
 
 ---
 
+## 0. Luncurkan staging di Railway (±15 menit)
+
+Staging = situs sungguhan di internet untuk dicoba dulu, dengan domain gratis
+`nama-app.up.railway.app` (HTTPS otomatis — wajib untuk kamera).
+
+> **Kenapa bukan Vercel/Netlify?** Mereka serverless: body permintaan maks.
+> 4,5 MB (pesanan foto biasanya lebih besar), tidak ada disk permanen
+> (`codes.json` bisa hilang = kode terjual ikut hilang), dan tidak bisa
+> menjalankan antrean coba-ulang di latar. Render gratis juga menghapus
+> semua berkas setiap kali tidur (15 menit tanpa pengunjung).
+
+1. **railway.com → Login with GitHub.** Trial gratis $5 (30 hari, tanpa kartu).
+   Setelah itu paket Hobby $5/bulan (sudah termasuk $5 pemakaian).
+2. **New Project → Deploy from GitHub repo → `one-strip-clover`.**
+   Railway membaca `railway.json` (perintah start, health check `/healthz`,
+   restart otomatis) dan `.nvmrc` (Node 22) dari repo.
+3. **Tambah Volume:** klik service → **Settings → Volumes → Add Volume**,
+   mount path **`/data`**. Tanpa ini, kode & pesanan hilang setiap deploy.
+4. **Variables** (tab Variables → Raw Editor), minimal:
+   ```
+   NODE_ENV=production
+   SITE_ENV=staging
+   DATA_DIR=/data
+   SESSION_SECRET=<openssl rand -hex 32>      ← tandai Sealed
+   ADMIN_KEY=<openssl rand -hex 24>           ← tandai Sealed
+   ```
+   Opsional untuk uji kirim ke studio: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+   `SMTP_PASS` (Sealed), `SMTP_FROM`, `STUDIO_EMAIL`. Pakai **email uji**,
+   bukan inbox studio sungguhan. Link toko boleh dikosongkan di staging.
+5. **Settings → Networking → Generate Domain** → dapat
+   `https://nama-app.up.railway.app`.
+6. **Deploy otomatis:** setiap merge ke `main` (yang sudah wajib lolos semua
+   cek CI) langsung di-deploy ulang. Aktifkan **Settings → "Wait for CI"**
+   supaya Railway menunggu CI hijau dulu.
+
+**Uji setelah hidup:**
+
+```bash
+URL=https://nama-app.up.railway.app
+curl -s $URL/healthz                  # {"ok":true,...}
+curl -s $URL/robots.txt               # Disallow: /   ← staging tidak diindeks
+curl -sI $URL/ | grep -i robots       # X-Robots-Tag: noindex
+```
+
+Lalu buka `/admin` (login dengan `ADMIN_KEY`) → buat 3 kode **Stok admin** →
+buka `/booth` di HP → tukar kode, ambil foto, unduh strip, coba "Kirim ke studio".
+
+**Dari staging ke produksi:** buat Environment baru di Railway (atau project
+terpisah) dengan rahasia BARU, `SITE_ENV` dikosongkan, volume sendiri, lalu
+pasang domain milikmu di **Settings → Networking → Custom Domain**. Jangan
+memakai ulang `SESSION_SECRET`/`ADMIN_KEY` staging di produksi.
+
 ## 1. WAJIB sebelum go-live
 
 | # | Hal | Cara memastikan |
