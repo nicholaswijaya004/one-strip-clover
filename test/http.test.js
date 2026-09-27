@@ -105,6 +105,15 @@ test("http: kode berformat aneh ditolak sebelum menyentuh data", async () => {
   }
 });
 
+test("http: robots.txt produksi menutup /admin & API, tapi halaman boleh diindeks", async () => {
+  const r = await kirim("/robots.txt", { method: "GET" });
+  assert.equal(r.status, 200);
+  assert.match(r.data, /Disallow: \/admin/);
+  assert.match(r.data, /Disallow: \/api\//);
+  assert.doesNotMatch(r.data, /Disallow: \/\n/);
+  assert.equal(r.headers.get("x-robots-tag"), null, "produksi tidak boleh noindex");
+});
+
 test("http: respons API tidak boleh di-cache", async () => {
   const r = await kirim("/api/config", { method: "GET" });
   assert.equal(r.status, 200);

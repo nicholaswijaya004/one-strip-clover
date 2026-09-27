@@ -128,6 +128,15 @@ app.use(mw.bodyParsers());
  * Dipisah supaya pengunjung tahu dulu ini apa sebelum kameranya menyala —
  * meminta izin kamera di detik pertama membuat orang kabur.
  */
+// Staging: larang semua crawler. Produksi: boleh diindeks, kecuali /admin & API.
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain").send(
+    mw.isStaging()
+      ? "User-agent: *\nDisallow: /\n"
+      : "User-agent: *\nDisallow: /admin\nDisallow: /api/\n"
+  );
+});
+
 app.get("/", (req, res) =>
   res.sendFile(path.join(__dirname, "public", "index.html"))
 );

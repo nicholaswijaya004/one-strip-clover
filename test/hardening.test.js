@@ -198,3 +198,13 @@ test("email: validasi linear — masukan jahat tidak membuat CPU macet", () => {
   const ms = Number(process.hrtime.bigint() - t0) / 1e6;
   assert.ok(ms < 50, `validasi email ${ms.toFixed(1)} ms — rawan ReDoS`);
 });
+
+/* ------------------------------ staging ------------------------------ */
+
+test("staging: SITE_ENV=staging dikenali (situs uji tidak diindeks Google)", () => {
+  const { isStaging } = require("../lib/http/middleware");
+  assert.equal(isStaging({ SITE_ENV: "staging" }), true);
+  assert.equal(isStaging({ SITE_ENV: "STAGING" }), true);
+  assert.equal(isStaging({ SITE_ENV: "production" }), false);
+  assert.equal(isStaging({}), false);
+});

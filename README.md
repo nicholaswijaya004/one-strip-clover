@@ -303,7 +303,11 @@ Kalau Drive tidak diisi, fallback tetap jalan via email saja.
 
 ---
 
-## 3. Deploy (Railway / Render, ±15 menit)
+## 3. Deploy (Railway, ±15 menit)
+
+> Panduan langkah demi langkah terbaru (staging dulu, lalu produksi) ada di
+> **[PRODUCTION.md → bagian 0](PRODUCTION.md#0-luncurkan-staging-di-railway-15-menit)**.
+> Ringkasan lama di bawah ini dipertahankan sebagai referensi.
 
 Rekomendasi: **Railway.app** atau **Render.com** — keduanya kasih HTTPS otomatis
 (wajib untuk kamera) dan punya **persistent disk / volume** untuk `data/codes.json`.
