@@ -451,7 +451,7 @@ async function startCamera(){
   if(S.stream) return true;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
     lensMsg.style.display="grid";
-    lensMsg.innerHTML="Kamera hanya bisa jalan lewat <b>http://localhost:3000</b> (server) atau situs <b>HTTPS</b> — bukan file yang dibuka langsung.<br><br>Sementara itu, pakai tombol <b>Unggah foto</b> ya.";
+    lensMsg.innerHTML="<p>Kamera hanya bisa jalan lewat <b>http://localhost:3000</b> (server) atau situs <b>HTTPS</b> — bukan file yang dibuka langsung.<br><br>Sementara itu, pakai tombol <b>Unggah foto</b> ya.</p>";
     return false;
   }
   try{
@@ -459,12 +459,15 @@ async function startCamera(){
       video:{ facingMode:"user", width:{ideal:1280}, height:{ideal:960} }, audio:false
     });
     cam.srcObject=S.stream;
+    cam.classList.add("on");
+    // autoplay bisa ditahan iOS (mode hemat daya) — putar eksplisit
+    cam.play().catch(()=>{});
     lensMsg.style.display="none";
     rec.classList.add("live");
     return true;
   }catch(err){
     lensMsg.style.display="grid";
-    lensMsg.innerHTML="Kamera tidak bisa diakses 😢<br>Izinkan kamera di browser (ikon 🔒 di address bar), atau pakai tombol <b>Unggah foto</b>.";
+    lensMsg.innerHTML="<p>Kamera tidak bisa diakses 😢<br>Izinkan kamera di browser (ikon 🔒 di address bar), atau pakai tombol <b>Unggah foto</b>.</p>";
     return false;
   }
 }

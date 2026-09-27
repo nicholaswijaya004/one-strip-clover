@@ -1,21 +1,22 @@
 # Font untuk render strip di server
 
-Taruh 4 berkas ini di folder ini supaya hasil unduhan premium **sama persis**
-dengan pratinjau di browser. Kalau tidak ada, server tetap bisa merender
-tetapi teks footer memakai font bawaan sistem (bentuknya berbeda).
+Font brand **sudah ikut di repo**, jadi hasil unduhan premium sama persis
+dengan pratinjau di browser — di laptop, CI, maupun Railway.
 
-| Berkas yang dibutuhkan | Ambil dari |
-|---|---|
-| `Parisienne-Regular.ttf`   | https://fonts.google.com/specimen/Parisienne |
-| `Montserrat-SemiBold.ttf`  | https://fonts.google.com/specimen/Montserrat |
-| `Montserrat-Bold.ttf`      | https://fonts.google.com/specimen/Montserrat |
-| `IBMPlexMono-Regular.ttf`  | https://fonts.google.com/specimen/IBM+Plex+Mono |
+| Berkas | Dipakai untuk | Sumber |
+|---|---|---|
+| `Parisienne-Regular.ttf`  | judul "One Strip Clover" | [google/fonts](https://github.com/google/fonts/tree/main/ofl/parisienne) |
+| `Montserrat-SemiBold.ttf` | label & slogan (600)     | [JulietaUla/Montserrat](https://github.com/JulietaUla/Montserrat) (TTF statis) |
+| `Montserrat-Bold.ttf`     | watermark (700)          | [JulietaUla/Montserrat](https://github.com/JulietaUla/Montserrat) (TTF statis) |
+| `IBMPlexMono-Regular.ttf` | tanggal (400)            | [google/fonts](https://github.com/google/fonts/tree/main/ofl/ibmplexmono) |
 
-Cara: buka tautannya → **Get font** → **Download all** → ekstrak →
-salin berkas `.ttf` yang namanya cocok ke folder ini.
+Semua berlisensi **SIL Open Font License 1.1** — bebas dipakai komersial.
+OFL mewajibkan teks lisensinya ikut disebarkan bersama font, jadi ada di
+[`licenses/`](licenses/). Jangan hapus folder itu.
 
-Semua font di atas berlisensi SIL Open Font License — bebas dipakai komersial.
-
-Setelah menaruh font, restart server. Ringkasan startup akan menampilkan:
+Saat server menyala, ringkasan startup menampilkan:
 
     renderServer     : ON (font: Parisienne,Montserrat,IBM Plex Mono)
+
+Kalau satu berkas hilang, log menampilkan `render.font_missing` beserta
+namanya; kalau semuanya hilang, `render.no_fonts`. `npm test` juga gagal.

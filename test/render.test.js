@@ -37,6 +37,22 @@ test('renderer: TIDAK ada kode penggambar kembar di index.html', () => {
   assert.ok(index.includes('src="/shared/strip-renderer.js"'), 'halaman harus memakai modul bersama');
 });
 
+test('render: font brand ikut di repo & terdaftar (unduhan = pratinjau)', () => {
+  const dir = path.join(__dirname, '..', 'assets', 'fonts');
+  for (const f of ['Parisienne-Regular.ttf', 'Montserrat-SemiBold.ttf', 'Montserrat-Bold.ttf', 'IBMPlexMono-Regular.ttf']) {
+    const b = fs.readFileSync(path.join(dir, f));
+    assert.equal(b.readUInt32BE(0), 0x00010000, `${f} bukan TrueType`);
+  }
+  // OFL mewajibkan teks lisensi ikut disebarkan bersama fontnya
+  for (const f of ['OFL-Parisienne.txt', 'OFL-Montserrat.txt', 'OFL-IBMPlexMono.txt']) {
+    assert.match(fs.readFileSync(path.join(dir, 'licenses', f), 'utf8'), /SIL Open Font License/);
+  }
+  const peringatan = [];
+  render.init({ info() {}, warn: (e) => peringatan.push(e) });
+  assert.deepEqual(peringatan, [], 'server memperingatkan font hilang');
+  assert.deepEqual(render.status().fonts, ['Parisienne', 'Montserrat', 'IBM Plex Mono']);
+});
+
 /* --------------------------- endpoint premium --------------------------- */
 
 // Perilaku sesungguhnya (403 tanpa token, 429 saat kebanyakan) diuji lewat

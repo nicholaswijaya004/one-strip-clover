@@ -255,27 +255,61 @@
   .spek div{padding:18px 12px 0 0; font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:rgba(252,250,243,.6); text-transform:uppercase}
   .spek b{display:block; font-family:var(--display); font-size:24px; color:var(--mint); letter-spacing:-.01em; text-transform:none; margin-bottom:2px}
 
-  /* lembar A4 dengan strip terbaring — persis bentuk yang dicetak studio */
-  .a4{
-    position:relative; width:min(100%,420px); aspect-ratio:210/297; margin:0 auto;
-    background:var(--paper); border-radius:3px; padding:4.8% 0 0;
-    box-shadow:0 50px 80px -40px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06);
-    transform:perspective(1200px) rotateX(18deg) rotateZ(-6deg);
-    transition:transform .9s cubic-bezier(.2,.8,.2,1);
+  /* Yang diterima pembeli: strip JADI (sudah dipotong studio dari lembar A4)
+     bersandar di depan amplop kiriman. Ukuran mengikuti --w, rasio strip 1 : 3,057. */
+  .kiriman{
+    --w:clamp(128px,15vw,170px);
+    position:relative; width:min(100%,calc(var(--w) * 2.6)); height:calc(var(--w) * 3.057 + 48px); margin:0 auto;
   }
-  .cetak.tampil .a4{transform:perspective(1200px) rotateX(8deg) rotateZ(-3deg)}
-  .a4 .strip-baring{
-    width:72.4%; aspect-ratio:152/51; margin:0 auto; background:var(--cream);
-    border:1px dashed rgba(108,72,98,.35); display:flex; align-items:center; gap:2.2%; padding:0 3%;
+  .kiriman .amplop{
+    position:absolute; right:0; bottom:8%; width:calc(var(--w) * 1.9); height:calc(var(--w) * 1.25);
+    background:var(--blush); border-radius:6px; overflow:hidden;
+    box-shadow:0 40px 60px -34px rgba(0,0,0,.75);
+    transform:rotate(12deg) translateY(16px); transition:transform 1s cubic-bezier(.2,.8,.2,1);
   }
-  .a4 .strip-baring .kp{font-family:var(--script); color:var(--clover-deep); font-size:clamp(11px,1.5vw,15px); writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap}
-  .a4 .strip-baring .f{flex:1; aspect-ratio:38.2/47.7; border-radius:2px}
-  .a4 .strip-baring .f:nth-of-type(1){background:linear-gradient(150deg,var(--blush),#f1bfd1)}
-  .a4 .strip-baring .f:nth-of-type(2){background:linear-gradient(150deg,var(--mint),#a6dfd6)}
-  .a4 .strip-baring .f:nth-of-type(3){background:linear-gradient(150deg,#dfe6bb,var(--clover))}
-  .a4 .gunting{display:flex; align-items:center; gap:8px; width:72.4%; margin:10px auto 0; font-family:var(--mono); font-size:10px; color:var(--muted)}
-  .a4 .gunting::after{content:""; flex:1; border-top:1px dashed rgba(108,72,98,.35)}
-  .a4 .ukuran{position:absolute; left:0; right:0; bottom:6%; text-align:center; font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:rgba(108,72,98,.45)}
+  /* tutup amplop */
+  .kiriman .amplop::before{
+    content:""; position:absolute; inset:0 0 auto; height:58%;
+    background:#F1CFDB; clip-path:polygon(0 0,100% 0,50% 100%);
+  }
+  .kiriman .perangko{
+    position:absolute; top:10%; right:7%; width:17%; aspect-ratio:4/5; display:grid; place-items:center;
+    background:var(--plum); color:var(--mint); outline:2px dashed var(--blush); outline-offset:-5px; border-radius:2px;
+  }
+  .kiriman .perangko svg{width:62%}
+  .kiriman .alamat{
+    position:absolute; right:8%; bottom:12%; width:48%; padding:8px 10px; display:grid; gap:6px;
+    background:var(--paper); border-radius:3px;
+  }
+  .kiriman .alamat b{font-family:var(--mono); font-weight:400; font-size:8.5px; letter-spacing:.16em; color:var(--plum)}
+  .kiriman .alamat i{display:block; height:1.5px; background:rgba(108,72,98,.22)}
+  .kiriman .alamat i:last-child{width:62%}
+
+  .kiriman .jadi{
+    position:absolute; left:4%; top:0; z-index:1; width:var(--w); height:calc(var(--w) * 3.057);
+    background:var(--paper); border-radius:3px; overflow:hidden;
+    box-shadow:0 44px 70px -30px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.05);
+    transform:rotate(-9deg) translateY(28px); transition:transform 1s cubic-bezier(.2,.8,.2,1) .08s;
+  }
+  .cetak.tampil .amplop{transform:rotate(7deg)}
+  .cetak.tampil .jadi{transform:rotate(-4deg)}
+  .jadi .kepala{height:14%; display:grid; place-items:center; align-content:center}
+  .jadi .kepala .s{font-family:var(--script); color:var(--clover-deep); font-size:calc(var(--w) * .12); line-height:1}
+  .jadi .kepala .k{font-family:var(--display); font-weight:700; font-size:calc(var(--w) * .035); letter-spacing:.3em; color:rgba(108,72,98,.6); margin-top:4px}
+  .jadi .f{display:block; width:85%; height:22.3%; margin:0 auto 2.9%; border-radius:2px}
+  .jadi .f:nth-of-type(1){background:linear-gradient(150deg,var(--blush),#f1bfd1)}
+  .jadi .f:nth-of-type(2){background:linear-gradient(150deg,var(--mint),#a6dfd6)}
+  .jadi .f:nth-of-type(3){background:linear-gradient(150deg,#dfe6bb,var(--clover))}
+  .jadi .kaki{position:absolute; left:0; right:0; bottom:0; height:12%; display:grid; place-items:center; align-content:center; gap:3px}
+  .jadi .kaki .t{font-family:var(--display); font-weight:700; font-size:calc(var(--w) * .042); letter-spacing:.1em; color:rgba(108,72,98,.7); white-space:nowrap}
+  .jadi .kaki .d{font-family:var(--mono); font-size:calc(var(--w) * .036); color:rgba(108,72,98,.5)}
+
+  .kiriman .catat{
+    position:absolute; right:2%; top:4%; z-index:2; display:grid; gap:2px; padding:9px 12px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
+    background:var(--mint); border-radius:4px; transform:rotate(3deg);
+  }
+  .kiriman .catat span{color:rgba(59,46,56,.62); letter-spacing:.08em; text-transform:none}
 
   /* ---- beli ---- */
   .beli-bagian{text-align:center}
@@ -320,7 +354,7 @@
     html{scroll-behavior:auto}
     .koin,.pita .isi{animation:none}
     .js .muncul{opacity:1; transform:none; transition:none}
-    .a4{transition:none}
+    .kiriman .amplop,.kiriman .jadi{transition:none}
   }
 
   /* ============================== responsif ============================== */
@@ -499,22 +533,27 @@
       <div>
         <span class="kicker muncul">Dari layar ke genggaman</span>
         <h2 class="muncul t1"><span class="s">printed with love</span>Cetakan asli, bukan sekadar file.</h2>
-        <p class="muncul t2">Dengan kode premium, stripmu dicetak studio di atas kertas foto —
-          ukuran photobox klasik 2 × 6 inci — lalu dikirim ke alamatmu. Kenangan yang
-          bisa diselipkan di dompet, ditempel di cermin, atau dibawa ke mana pun.</p>
+        <p class="muncul t2">Dengan kode premium, stripmu dicetak studio di atas kertas foto,
+          dipotong rapi ke ukuran photobox klasik 2 × 6 inci, lalu dikirim ke alamatmu
+          dalam bentuk jadi. Tinggal diselipkan di dompet, ditempel di cermin, atau
+          dibawa ke mana pun.</p>
         <div class="spek muncul t3">
           <div><b>51×152</b>milimeter</div>
           <div><b>HD</b>tanpa watermark</div>
           <div><b>3</b>bingkai eksklusif</div>
         </div>
       </div>
-      <div class="a4 muncul" aria-hidden="true">
-        <div class="strip-baring">
-          <span class="kp">One Strip Clover</span>
-          <i class="f"></i><i class="f"></i><i class="f"></i>
+      <div class="kiriman muncul" aria-hidden="true">
+        <div class="amplop">
+          <div class="perangko"><svg viewBox="0 0 40 40"><use href="#clover"/></svg></div>
+          <div class="alamat"><b>UNTUK KAMU</b><i></i><i></i><i></i></div>
         </div>
-        <div class="gunting">✂ potong di sini</div>
-        <div class="ukuran">A4 · 210 × 297 MM</div>
+        <div class="jadi">
+          <div class="kepala"><span class="s">One Strip Clover</span><span class="k">PHOTOBOX DIGITAL</span></div>
+          <i class="f"></i><i class="f"></i><i class="f"></i>
+          <div class="kaki"><span class="t">ONE STRIP · ONE MEMORY</span><span class="d tgl-kini">27 SEP 2026</span></div>
+        </div>
+        <div class="catat">✂ dipotong studio<span>siap pajang, 51 × 152 mm</span></div>
       </div>
     </div>
   </section>

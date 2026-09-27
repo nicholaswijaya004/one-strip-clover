@@ -93,6 +93,12 @@
   }
   .viewport{position:relative;background:#E9E4DC;aspect-ratio:4/3;overflow:hidden}
   video,#stageImg{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(-1)}
+  /* Sebelum kamera menyala <video> kosong. iOS (mis. mode hemat daya) lalu
+     menggambar tombol play bawaannya — terbalik karena scaleX(-1) — tepat di
+     atas teks. Sembunyikan video sampai stream hidup, dan matikan tombolnya. */
+  #cam:not(.on){visibility:hidden}
+  video::-webkit-media-controls,
+  video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none}
   .rec{
     position:absolute;top:14px;left:16px;z-index:4;display:flex;gap:7px;align-items:center;
     font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:#fff;
@@ -107,6 +113,7 @@
     background:rgba(59,46,56,.42);backdrop-filter:blur(6px);
     padding:6px 11px;border-radius:999px;
   }
+  .shots:empty{display:none}
   .countdown{
     position:absolute;inset:0;z-index:5;display:none;place-items:center;
     font-family:var(--script);font-size:120px;color:#fff;
@@ -120,6 +127,8 @@
     color:var(--muted);padding:0 34px;font-size:14.5px;line-height:1.65;
     background:linear-gradient(160deg,rgba(249,228,235,.5),rgba(169,186,214,.28));
   }
+  /* satu anak saja: tanpa <p>, tiap potongan teks & <b> jadi baris grid sendiri */
+  .lens-msg p{margin:0;max-width:34ch}
   .lens-msg b{color:var(--plum)}
 
   /* ---------------- control panel ---------------- */
@@ -389,7 +398,7 @@
   <div class="booth">
     <div class="viewport">
       <video id="cam" autoplay playsinline muted></video>
-      <div class="lens-msg" id="lensMsg">Tekan <b>Mulai Sesi</b> untuk menyalakan kamera,<br>atau unggah 3 fotomu sendiri.</div>
+      <div class="lens-msg" id="lensMsg"><p>Tekan <b>Mulai Sesi</b> untuk menyalakan kamera,<br>atau unggah 3 fotomu sendiri.</p></div>
       <div class="rec" id="rec"><span class="dot"></span>KAMERA</div>
       <div class="shots" id="shots"></div>
       <div class="countdown" id="countdown">3</div>

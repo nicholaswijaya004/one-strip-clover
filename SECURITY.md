@@ -291,6 +291,6 @@ Detail penting:
 * `@napi-rs/canvas` dipasang sebagai **optionalDependency**. Kalau gagal
   dipasang, server tetap hidup, endpoint render mengembalikan 501, dan browser
   otomatis kembali ke versi berwatermark. Deploy tidak akan gagal karenanya.
-* Font brand perlu ditaruh di `assets/fonts/` (lihat `assets/fonts/README.md`),
-  kalau tidak teks footer memakai font bawaan sistem.
+* Font brand (lisensi OFL) ikut di repo, `assets/fonts/`; kalau ada yang hilang,
+  log menampilkan `render.font_missing` dan `npm test` gagal.
 * Batas pemakaian dihitung **per kode** (30/jam), bukan per IP.
