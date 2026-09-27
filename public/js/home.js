@@ -16,12 +16,10 @@
 
   /* ------------------------- tanggal & tahun ------------------------- */
   var kini = new Date();
-  var tgl = document.getElementById("tanggal");
-  if (tgl) {
-    tgl.textContent = kini
-      .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-      .toUpperCase();
-  }
+  var teksTgl = kini
+    .toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+    .toUpperCase();
+  document.querySelectorAll("#tanggal, .tgl-kini").forEach(function (el) { el.textContent = teksTgl; });
   var thn = document.getElementById("tahun");
   if (thn) thn.textContent = String(kini.getFullYear());
 

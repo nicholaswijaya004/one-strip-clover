@@ -77,3 +77,27 @@ test("brand: kode akses memakai awalan OSC", () => {
   const kode = lib.generate(3, { writeFile: false }).codes;
   for (const c of kode) assert.match(c, /^OSC-/);
 });
+
+test("booth (mobile): pesan kamera tetap satu paragraf, tanpa tombol play iOS", () => {
+  const booth = fs.readFileSync(path.join(root, "public", "booth.html"), "utf8");
+  const js = fs.readFileSync(path.join(root, "public", "js", "booth.js"), "utf8");
+  // .lens-msg memakai display:grid — setiap anak langsung jadi baris sendiri,
+  // jadi isinya WAJIB dibungkus satu <p> (dulu "Tekan" & "Mulai Sesi" terpisah)
+  assert.match(booth, /id="lensMsg"><p>/);
+  for (const m of js.match(/lensMsg\.innerHTML\s*=\s*"[^"]*"/g) || []) {
+    assert.match(m, /="<p>.*<\/p>"$/, "pesan kamera harus dibungkus <p>");
+  }
+  // <video> kosong disembunyikan sampai stream hidup (iOS menggambar tombol play)
+  assert.match(booth, /#cam:not\(\.on\)\{visibility:hidden\}/);
+  assert.match(js, /cam\.classList\.add\("on"\)/);
+  // penghitung foto yang kosong tidak boleh tampil sebagai pil abu-abu
+  assert.match(booth, /\.shots:empty\{display:none\}/);
+});
+
+test("beranda: bagian cetak menampilkan strip JADI yang dikirim, bukan lembar A4", () => {
+  const beranda = fs.readFileSync(path.join(root, "public", "index.html"), "utf8");
+  const bagian = beranda.slice(beranda.indexOf('id="cetak"'), beranda.indexOf('id="beli"'));
+  assert.ok(bagian.includes('class="kiriman'), "visual kiriman hilang");
+  assert.ok(!/potong di sini|210 × 297/.test(bagian), "pembeli tidak menerima lembar A4");
+  assert.match(bagian, /dipotong rapi/);
+});
