@@ -180,3 +180,21 @@ test("antrean: putaran coba-ulang tidak pernah tumpang tindih", async () => {
   assert.equal(maks, 1);
   assert.equal(panggilan, 1, "pesanan yang sama terkirim lebih dari sekali");
 });
+
+/* ------------------------------ ReDoS ------------------------------ */
+
+test("email: validasi linear — masukan jahat tidak membuat CPU macet", () => {
+  const fmt = require("../lib/format");
+  assert.equal(fmt.isEmail("daniel@gmail.com"), true);
+  assert.equal(fmt.isEmail("a@toko.co.id"), true);
+  for (const salah of ["a@b", "a@b.", "@b.co", "a b@c.co", "", null]) {
+    assert.equal(fmt.isEmail(salah), false, String(salah));
+  }
+  // pola yang dulu memicu backtracking polinomial (temuan CodeQL)
+  const jahat = "!@!." + "!.".repeat(50000) + " ";
+  const t0 = process.hrtime.bigint();
+  assert.equal(fmt.isEmail(jahat), false);
+  assert.equal(fmt.EMAIL_RE.test(jahat), false);
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+  assert.ok(ms < 50, `validasi email ${ms.toFixed(1)} ms — rawan ReDoS`);
+});

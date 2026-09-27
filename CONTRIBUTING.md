@@ -35,7 +35,7 @@ Aturannya sudah ditulis di `.github/rulesets/main.json`:
 **Settings → Rules → Rulesets → New ruleset → Import a ruleset** → pilih
 berkas itu → **Create**.
 
-Isinya: wajib lewat PR (squash), wajib lulus `ci-ok` + tiga CodeQL +
+Isinya: wajib lewat PR (squash), wajib lulus `ci-ok` + dua CodeQL +
 `dependency-review`, cabang harus mutakhir, riwayat linear, tidak boleh
 force-push/hapus `main`, dan CodeQL memblokir merge kalau ada temuan
 keamanan tingkat high.
@@ -79,13 +79,12 @@ Lalu buka PR di GitHub. Dalam ±2 menit kamu akan melihat:
 |---|---|
 | **CI / lint** | ESLint (bug & keamanan), TypeScript strict, gofmt/go vet, actionlint, tanpa skrip inline |
 | **CI / build** | instal dependensi produksi saja, semua modul termuat, `go build` |
-| **CI / test (Node 22 & 24)** | 268 tes (unit + HTTP sungguhan) + ambang cakupan + simulasi browser |
-| **CI / go-test** | tes Go dengan `-race` |
+| **CI / test (Node 22 & 24)** | 271 tes (unit + HTTP sungguhan) + ambang cakupan + simulasi browser |
 | **CI / integration** | server `NODE_ENV=production` diserang dari luar: header, akses admin, body raksasa, tebak kode |
-| **CI / dependency-audit** | `npm audit` (≥ moderate), tanda tangan paket, `govulncheck` |
+| **CI / dependency-audit** | `npm audit` (≥ moderate), tanda tangan paket |
 | **CI / secret-scan** | `.env` & `data/` tidak ter-commit, gitleaks di seluruh riwayat |
 | **CI / ci-ok** | satu gerbang: lulus hanya kalau SEMUA di atas lulus |
-| **CodeQL** (actions, JS/TS, Go) | analisis keamanan statis, hasil di tab Security |
+| **CodeQL** (actions, JS/TS) | analisis keamanan statis, hasil di tab Security |
 | **Dependency Review** | dependensi baru tanpa celah & tanpa lisensi GPL/AGPL |
 | **Claude Review** | komentar berisi temuan keamanan/logika |
 | **OpenSSF Scorecard** (main, mingguan) | skor kebiasaan keamanan repo |
@@ -228,6 +227,5 @@ public/shared/ kode yang dipakai browser DAN server:
 scripts/      perkakas: generate kode, backup, template, simulasi
 test/         tes unit (node --test bawaan, tanpa framework)
 data/         data jalan — TIDAK ikut git, ada di volume server
-backend-go/   proyek belajar (Go + OOAD) — BELUM dipakai produksi
 frontend-react/ proyek belajar (React) — BELUM dipakai produksi
 ```

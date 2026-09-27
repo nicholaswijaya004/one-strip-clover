@@ -126,6 +126,11 @@
     ADMIN_WINDOW_MS: 15 * 60 * 1000,
     ADMIN_MAKS: 60,
     GENERATE_MAKS: 20,
+    // Batas UMUM per IP untuk semua halaman & API (di luar berkas statis).
+    // Longgar: satu IP operator seluler (CGNAT) bisa mewakili ratusan pembeli.
+    // Tugasnya menahan banjir permintaan dari satu sumber, bukan membatasi pembeli.
+    GLOBAL_WINDOW_MS: 60 * 1000,
+    GLOBAL_MAKS: 1000,
 
     // lain-lain
     KODE_MAKS_SEKALI: 2000,

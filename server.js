@@ -91,6 +91,8 @@ const rateLimit = (opsi) => mw.rateLimit(opsi, log);
 app.use(mw.requestLog(log));
 app.use(mw.securityHeaders());
 app.use(mw.staticFiles(path.join(__dirname, "public")));
+// Semua yang BUKAN berkas statis (halaman, API) melewati pembatas umum per IP
+app.use(mw.globalRateLimit(log));
 
 // Rute berbadan besar: rate limit + otorisasi (dari HEADER) + jatah paralel
 // diperiksa SEBELUM body 25 MB di-parse. Lihat largeBodyGate().
@@ -204,8 +206,16 @@ app.post("/api/redeem", (req, res) => {
     return res.status(HTTP.BAD_REQUEST).json({ ok: false, error: ERR.EMPTY });
   }
 
+  // Format kode: huruf besar, angka, tanda hubung. Menolak lebih awal masukan
+  // aneh (termasuk "__proto__") sebelum menyentuh data.
+  if (!/^[A-Z0-9][A-Z0-9-]{2,31}$/.test(raw)) {
+    catatGagal();
+    log.warn("redeem.invalid", { rid: req.rid, ip: req.ip, alasan: "format" });
+    return res.status(HTTP.NOT_FOUND).json({ ok: false, error: ERR.INVALID });
+  }
+
   const codes = loadCodes();
-  const entry = cariKode(codes, raw);
+  const entry = Object.prototype.hasOwnProperty.call(codes, raw) ? codes[raw] : undefined;
   // ID perangkat dibuat & disimpan oleh browser pembeli (bukan data pribadi,
   // hanya angka acak). Dipakai untuk mengikat kode ke satu perangkat.
   const idMasuk = req.body && req.body.deviceId;
@@ -589,7 +599,7 @@ app.post(
       "Nama": name,
       "Email": email,
       "WhatsApp": wa,
-      "Alamat": String(address).replace(/\s*\n\s*/g, ", "),
+      "Alamat": String(address).split("\n").map((b) => b.trim()).filter(Boolean).join(", "),
       "Kode": code,
       "Pemakaian": `${n}/${MAX_SUBMISSIONS}`,
       "Catatan": note,

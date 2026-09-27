@@ -5,7 +5,15 @@ OOAD dan design pattern. Setiap konsep ditunjukkan pada masalah yang benar-benar
 ada di proyek ini, bukan contoh `Animal`/`Dog`/`Cat`.
 
 > ⚠️ Proyek Node yang sekarang **tetap jadi sistem produksi**. Folder
-> `backend-go/` dan `frontend-react/` adalah proyek belajar paralel.
+> `frontend-react/` adalah proyek belajar paralel.
+>
+> 📦 **Kode Go (`backend-go/`) sudah dikeluarkan dari repo ini** supaya repo
+> produksi tetap ramping. Versi terakhirnya — sudah bisa di-build dan lulus
+> tes — masih utuh di riwayat git. Untuk memindahkannya ke repo belajar sendiri:
+>
+> ```bash
+> git archive f487885 backend-go | tar -x -C ../belajar-go
+> ```
 
 ---
 

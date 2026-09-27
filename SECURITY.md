@@ -7,7 +7,7 @@ lewat tab **Security → Report a vulnerability** di repo GitHub ini (private
 vulnerability reporting). Kami menanggapi dalam 3 hari kerja.
 
 Cakupan: website produksi (Node — `server.js`, `lib/`, `public/`).
-`backend-go/` dan `frontend-react/` adalah proyek belajar, belum dipakai produksi.
+`frontend-react/` adalah proyek belajar, belum dipakai produksi.
 
 ---
 
@@ -86,7 +86,9 @@ injeksi perintah SMTP.
 * **`server.js` bisa di-`require`** (`module.exports = { app, start }`) →
   tes HTTP sungguhan tanpa menyalakan proses terpisah.
 * **Rute admin dipisah** ke `lib/http/admin-routes.js` (dependensi disuntikkan).
-* **Proyek Go kini ter-build** (sebelumnya `go build` gagal) dan diuji `-race`.
+* **Proyek belajar Go dikeluarkan dari repo produksi** — tidak dipakai di
+  produksi, jadi hanya menambah waktu CI dan permukaan pemindaian. Kodenya
+  (sudah diperbaiki sampai ter-build & lulus tes) tetap ada di riwayat git.
 
 ## Batas yang masih ada (disadari)
 

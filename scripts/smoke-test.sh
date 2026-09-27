@@ -34,7 +34,17 @@ fi
 echo "── 2. Nyalakan server produksi"
 node server.js > "$LOG" 2>&1 &
 PID=$!
-trap 'kill $PID 2>/dev/null || true; rm -rf "$DATA_DIR"' EXIT
+# Beres-beres: matikan server, TUNGGU sampai benar-benar keluar (ia masih
+# menulis log ke DATA_DIR saat mati), baru hapus foldernya. Kode keluar
+# skrip dipertahankan — kegagalan beres-beres tidak boleh mengubah hasil tes.
+beres() {
+  local kode=$?
+  kill "$PID" 2>/dev/null || true
+  wait "$PID" 2>/dev/null || true
+  rm -rf "$DATA_DIR" 2>/dev/null || true
+  exit "$kode"
+}
+trap beres EXIT
 for _ in $(seq 1 30); do
   curl -sf "$BASE/healthz" > /dev/null 2>&1 && break
   sleep 1

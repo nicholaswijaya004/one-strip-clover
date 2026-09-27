@@ -21,7 +21,7 @@ const aturanKeamanan = {
 
 module.exports = [
   {
-    ignores: ["node_modules/**", "data/**", "backend-go/**", "frontend-react/**", "coverage/**"],
+    ignores: ["node_modules/**", "data/**", "frontend-react/**", "coverage/**"],
   },
   js.configs.recommended,
   {

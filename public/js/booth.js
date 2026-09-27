@@ -437,9 +437,11 @@ async function restorePremium(){
 
 /* ------------------------------- toast ------------------------------- */
 let toastTimer;
-function toast(html, ms){
+// Teks biasa, BUKAN HTML: beberapa pesan menyertakan data dari halaman
+// (mis. nomor pesanan), dan textContent tidak pernah bisa menjalankan markup.
+function toast(teks, ms){
   const t=$("toast");
-  t.innerHTML=html; t.classList.add("show");
+  t.textContent=teks; t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove("show"), ms||4000);
 }
@@ -734,7 +736,7 @@ $("downloadBtn").onclick=async ()=>{
 
     // 2) iOS Safari tanpa share: atribut download diabaikan → beri instruksi
     if(IS_IOS){
-      toast("📲 Di iPhone: <b>tekan lama</b> gambar strip di atas, lalu pilih <b>“Simpan ke Foto”</b>.", 7000);
+      toast("📲 Di iPhone: tekan lama gambar strip di atas, lalu pilih “Simpan ke Foto”.", 7000);
       return;
     }
 

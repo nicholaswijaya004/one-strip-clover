@@ -28,7 +28,7 @@ const toko = (links, wa) => ({ links, waAdmin: wa || "" });
 test("kotak beli: muncul kalau ada minimal satu link", () => {
   const st = buyBoxState(toko({ Tokopedia: "https://tokopedia.com/" }));
   assert.equal(st.visible, true);
-  assert.ok(st.html.includes("https://tokopedia.com/"));
+  assert.match(st.html, /href="https:\/\/tokopedia\.com\/"/);
 });
 
 test("kotak beli: muncul kalau hanya WhatsApp yang diisi", () => {

@@ -31,7 +31,6 @@
           { "context": "ci-ok" },
           { "context": "Analyze (actions)" },
           { "context": "Analyze (javascript-typescript)" },
-          { "context": "Analyze (go)" },
           { "context": "dependency-review" }
         ]
       }

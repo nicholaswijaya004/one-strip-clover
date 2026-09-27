@@ -89,6 +89,22 @@ test("http: halaman tidak memuat skrip inline (CSP akan memblokirnya)", async ()
   }
 });
 
+test("http: pembatas umum per IP terpasang di halaman & API", async () => {
+  for (const p of ["/", "/api/config"]) {
+    const r = await kirim(p, { method: "GET" });
+    assert.ok(r.headers.get("ratelimit-policy") || r.headers.get("ratelimit"), `${p} tanpa header rate limit`);
+  }
+});
+
+test("http: kode berformat aneh ditolak sebelum menyentuh data", async () => {
+  const ip = ipBaru();
+  for (const code of ["OSC_ABC", "OSC ABC", "<script>", "../../etc"]) {
+    const r = await kirim("/api/redeem", { body: { code }, ip });
+    assert.equal(r.status, 404, code);
+    assert.equal(r.data.error, ERR.INVALID);
+  }
+});
+
 test("http: respons API tidak boleh di-cache", async () => {
   const r = await kirim("/api/config", { method: "GET" });
   assert.equal(r.status, 200);

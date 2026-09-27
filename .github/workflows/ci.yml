@@ -27,7 +27,6 @@ concurrency:
 
 env:
   NODE_VERSION: "22"
-  GO_VERSION: "1.27" # rilis Go yang masih didukung (1.26 / 1.27); govulncheck butuh ≥ 1.26
 
 jobs:
   # ------------------------------------------------------------------ lint
@@ -64,18 +63,6 @@ jobs:
           done
           exit $gagal
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: false # tanpa dependensi eksternal (tidak ada go.sum)
-
-      - name: gofmt & go vet
-        working-directory: backend-go
-        run: |
-          set -e
-          belum=$(gofmt -l .)
-          if [ -n "$belum" ]; then echo "✗ belum di-gofmt:"; echo "$belum"; exit 1; fi
-          go vet ./...
 
       - name: actionlint (workflow GitHub Actions)
         run: |
@@ -112,14 +99,6 @@ jobs:
       - name: Semua modul server bisa dimuat tanpa devDependencies
         run: node -e 'for (const m of ["./lib/images","./lib/env","./lib/limiter","./lib/http/middleware","./lib/http/admin-routes","./lib/delivery","./lib/render"]) require(m); console.log("✓ modul termuat")'
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: false # tanpa dependensi eksternal (tidak ada go.sum)
-
-      - name: go build
-        working-directory: backend-go
-        run: go build ./...
 
   # ------------------------------------------------------------------ test
   test:
@@ -150,23 +129,6 @@ jobs:
         run: |
           npm run sim
           UJI_TEMPLATE=1 npm run sim
-
-  # ---------------------------------------------------------------- go-test
-  go-test:
-    name: go-test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: false # tanpa dependensi eksternal (tidak ada go.sum)
-      - name: go test -race
-        working-directory: backend-go
-        run: go test -race -count=1 ./...
 
   # ----------------------------------------------------------- integration
   integration:
@@ -215,16 +177,6 @@ jobs:
           npm ci --ignore-scripts
           npm audit signatures
 
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: false # tanpa dependensi eksternal (tidak ada go.sum)
-
-      - name: govulncheck (Go)
-        working-directory: backend-go
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
 
   secrets:
     name: secret-scan
@@ -281,7 +233,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [lint, build, test, go-test, integration, audit, secrets]
+    needs: [lint, build, test, integration, audit, secrets]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

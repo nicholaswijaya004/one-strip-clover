@@ -67,8 +67,8 @@ test("brand: nomor pesanan & subject email pakai awalan OSC", () => {
 });
 
 test("konfigurasi: link toko tidak lagi ditulis di dalam HTML", () => {
-  assert.ok(!index.includes("vt.tiktok.com"), "link contoh masih tertinggal di HTML");
-  assert.ok(!index.includes("example.com"), "link contoh masih tertinggal di HTML");
+  assert.doesNotMatch(index, /vt\.tiktok\.com/, "link contoh masih tertinggal di HTML");
+  assert.doesNotMatch(index, /example\.com/, "link contoh masih tertinggal di HTML");
   assert.ok(index.includes("/api/config"), "frontend harus mengambil setelan dari server");
 });
 

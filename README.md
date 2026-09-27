@@ -153,7 +153,7 @@ Panduan lengkap + cara menyalakan CI pertama kali: **CONTRIBUTING.md**
 | `SECURITY.md` | Cara melaporkan celah + hasil audit keamanan #1 & #2 |
 | `PRODUCTION.md` | Ceklis go-live, pemantauan, rencana darurat |
 | `CONTRIBUTING.md` | Alur kerja, setup CI, ambang cakupan |
-| `ARCHITECTURE.md` | Materi belajar OOAD & design pattern (proyek Go/React) |
+| `ARCHITECTURE.md` | Materi belajar OOAD & design pattern (kode Go-nya ada di riwayat git) |
 
 ---
 
@@ -163,7 +163,7 @@ Panduan lengkap + cara menyalakan CI pertama kali: **CONTRIBUTING.md**
 npm test
 ```
 
-268 tes, memakai `node --test` bawaan Node (tanpa framework):
+271 tes, memakai `node --test` bawaan Node (tanpa framework):
 
 | Berkas | Yang diuji |
 |---|---|

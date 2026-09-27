@@ -30,6 +30,9 @@ test("config: placeholder yang belum diganti tidak dianggap link", () => {
   });
   assert.equal(c.shops.tiktok, "", "link contoh dengan ... harus diabaikan");
   assert.equal(c.shops.shopee, "", "example.com harus diabaikan");
+  // host yang hanya MENGANDUNG teks example.com bukan tautan contoh
+  const asli = buildPublicConfig({ SHOP_SHOPEE: "https://shopee.co.id/example.com-case" });
+  assert.equal(asli.shops.shopee, "https://shopee.co.id/example.com-case");
   assert.equal(c.hasShop, false);
 });
 
