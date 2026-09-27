@@ -10,8 +10,11 @@ Perbaikan keamanan yang sudah dikerjakan ada di `SECURITY.md`.
 | # | Hal | Cara memastikan |
 |---|---|---|
 | 1 | **`.env` terisi lengkap** | Jalankan `npm start`, lihat ringkasan KONFIGURASI. Semua harus `ON` |
-| 2 | **`SESSION_SECRET` diisi** | Kalau kosong, sesi pembeli hangus tiap deploy |
-| 3 | **`ADMIN_KEY` acak & panjang** | `node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"` |
+| 1a | **`NODE_ENV=production`** | Dengan ini server MENOLAK hidup kalau rahasia kosong/lemah — deploy gagal terlihat, bukan diam-diam tidak aman |
+| 2 | **`SESSION_SECRET` ≥ 32 karakter, beda dari `ADMIN_KEY`** | `openssl rand -hex 32`. ⚠️ Sebelumnya boleh kosong (jatuh ke `ADMIN_KEY`); sekarang WAJIB — isi SEBELUM deploy versi ini, atau server tidak mau hidup |
+| 3 | **`ADMIN_KEY` acak ≥ 16 karakter** | `openssl rand -hex 24` |
+| 3a | **Node.js 22+** | Node 20 sudah end-of-life; `googleapis` mensyaratkan 22. Railway: set `NIXPACKS_NODE_VERSION=22` atau pakai `.nvmrc` (sudah ada) |
+| 3b | **`TRUST_PROXY` benar** | Railway/Render = `1` (bawaan). Tanpa proxy = `false` |
 | 4 | **`.env` TIDAK di GitHub** | `git status` — `.env` tidak boleh muncul |
 | 5 | **Volume ter-mount di `/app/data`** | Tanpa ini, semua kode ter-reset tiap deploy |
 | 6 | **HTTPS aktif** | Kamera browser tidak jalan tanpa HTTPS |
@@ -33,14 +36,25 @@ Perbaikan keamanan yang sudah dikerjakan ada di `SECURITY.md`.
 
 ## 3. Pemantauan
 
-Endpoint `GET /healthz` mengembalikan:
+Endpoint `GET /healthz` (publik) hanya mengembalikan hidup/tidak:
 
 ```json
-{"ok":true,"uptime":3600,"email":true,"drive":true,"chatbotStock":437}
+{"ok":true,"uptime":3600}
 ```
 
-Pasang di UptimeRobot / Better Stack (gratis), periksa tiap 5 menit.
-Yang penting dipantau:
+Detail hanya dengan header `x-admin-key` (stok kode & konfigurasi adalah
+info bisnis — dulu terbuka untuk siapa pun):
+
+```bash
+curl -H "x-admin-key: $ADMIN_KEY" https://domainmu/healthz
+# {"ok":true,"uptime":3600,"email":true,"drive":true,"render":true,
+#  "chatbotStock":437,"pendingOrders":0,"failedOrders":0}
+```
+
+Pasang yang publik di UptimeRobot / Better Stack (gratis), tiap 5 menit.
+Yang detail cukup dicek dari `/admin` atau monitor berbayar yang mendukung
+header. Saat deploy (SIGTERM) `/healthz` menjawab 503 supaya pembeli tidak
+diarahkan ke proses yang sedang mati. Yang penting dipantau:
 
 * **`ok:false` atau tidak merespons** → situs mati, pembeli tidak bisa apa-apa
 * **`email:false`** → pesanan masuk tapi tidak sampai ke kamu
@@ -85,15 +99,20 @@ Hitungan kasar 20.000/hari:
 
 **Yang justru jadi batas nyata — bukan jumlah pengunjung:**
 
-1. **Ukuran `codes.json`.** Setiap penukaran membaca & menulis SELURUH berkas.
-   20.000 kode ≈ 4 MB (masih cepat). Di 100.000 kode ≈ 20 MB, tiap penukaran
-   jadi ratusan milidetik dan operasinya berurutan → mulai terasa.
+1. **Ukuran `codes.json`.** Bacaan kini dari cache memori (hanya dibaca ulang
+   kalau berkas berubah), tapi setiap penukaran masih MENULIS seluruh berkas.
+   20.000 kode ≈ 4 MB (cepat). Di 100.000 kode ≈ 20 MB, tiap penukaran
+   jadi puluhan milidetik → mulai terasa.
    *Tindakan:* pindahkan kode lama yang sudah hangus ke arsip, atau naik ke
    SQLite saat total kode melewati ±50.000.
 
-2. **Memori saat unggahan bersamaan.** Tiap unggahan bisa 25 MB di memori.
-   10 orang mengirim bersamaan ≈ 250-400 MB.
-   *Tindakan:* pakai Railway dengan RAM ≥ 1 GB, jangan paket paling kecil.
+2. **Memori saat unggahan bersamaan.** Kini dibatasi di server: maksimal
+   6 unggahan besar + 2 render HD berjalan BERSAMAAN (kelebihannya dijawab
+   503 "server ramai, coba lagi"), dan body besar tanpa token ditolak
+   sebelum dibaca. Puncak memori ≈ 6 × 25 MB × 3 ≈ 450 MB.
+   *Tindakan:* pakai Railway dengan RAM ≥ 1 GB. Kalau sering muncul
+   `gate.busy` di log, naikkan RAM lalu naikkan `UPLOAD_PARALEL` di
+   `public/shared/contract.js`.
 
 3. **Kuota Gmail 500 email/hari.** Kalau pesanan > 500/hari, Gmail berhenti
    mengirim. *Tindakan:* pindah ke Brevo/Resend sebelum sampai situ.
@@ -116,6 +135,8 @@ beban sungguhan. Sebelum kampanye besar, uji dengan k6/Artillery.
 | Basis data sungguhan | `lib/store.js` hanya aman untuk 1 proses server | Saat menaikkan ke 2+ instance |
 | Panel pesanan di `/admin` | Sekarang pesanan hanya di email & log | Kalau pesanan > 20/hari |
 | Uji beban | Belum diuji dengan puluhan pengunjung bersamaan | Sebelum kampanye TikTok besar |
+| CDN / WAF di depan server | Serangan DDoS volumetrik (jutaan permintaan) tetap membanjiri 1 server; rate limit di aplikasi hanya menahan penyalahgunaan | Pasang Cloudflare (gratis) di depan domain sebelum promosi besar — lalu set `TRUST_PROXY=2` |
+| Redis untuk rate limit | Rate limit & kunci pesanan di memori 1 proses | Saat menaikkan ke 2+ instance |
 
 ## 7. Rencana kalau ada masalah
 

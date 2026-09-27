@@ -133,8 +133,10 @@ mencetak lalu memotong.
 
 ## Alur kerja & CI
 
-Setiap PR otomatis diperiksa: tes (Node 20 & 22), ambang cakupan, smoke test
-server, penjaga rahasia, dan review oleh Claude.
+Setiap PR otomatis diperiksa: lint, build, tes (Node 22 & 24) + cakupan,
+integrasi (server produksi diserang dari luar), CodeQL, audit dependensi,
+pemindai rahasia, dependency review, dan review oleh Claude. Rilis lewat tag
+`vX.Y.Z` menjalankan ulang semuanya.
 
 ```bash
 npm run ci    # jalankan semua pemeriksaan sebelum push
@@ -148,7 +150,7 @@ Panduan lengkap + cara menyalakan CI pertama kali: **CONTRIBUTING.md**
 
 | Berkas | Isi |
 |---|---|
-| `SECURITY.md` | Hasil audit keamanan: 10 celah yang ditemukan & diperbaiki |
+| `SECURITY.md` | Cara melaporkan celah + hasil audit keamanan #1 & #2 |
 | `PRODUCTION.md` | Ceklis go-live, pemantauan, rencana darurat |
 | `CONTRIBUTING.md` | Alur kerja, setup CI, ambang cakupan |
 | `ARCHITECTURE.md` | Materi belajar OOAD & design pattern (proyek Go/React) |
@@ -161,7 +163,7 @@ Panduan lengkap + cara menyalakan CI pertama kali: **CONTRIBUTING.md**
 npm test
 ```
 
-171 tes, tanpa dependency tambahan (memakai `node --test` bawaan Node 18+):
+268 tes, memakai `node --test` bawaan Node (tanpa framework):
 
 | Berkas | Yang diuji |
 |---|---|
@@ -174,6 +176,8 @@ npm test
 | `test/config.test.js` | link toko dari .env, tolak link palsu/berbahaya, rahasia tidak bocor |
 | `test/buybox.test.js` | kotak beli muncul/sembunyi dengan benar (termasuk saat setelan datang belakangan) |
 | `test/locks.test.js` | jatah pesanan tidak jebol walau kode ditukar ulang / dikirim berbarengan |
+| `test/http.test.js` | server sungguhan diserang lewat HTTP: CSP, body raksasa tanpa token, tebak kode, IPv6, bom dekompresi |
+| `test/hardening.test.js` | validasi gambar, identitas rate limit, konfigurasi produksi, cache penyimpanan, antrean |
 
 Tes menulis ke `data/codes.json`, tapi isinya dicadangkan & dikembalikan otomatis.
 
@@ -199,7 +203,7 @@ fotobox/
 
 ## 1. Jalankan di laptop (5 menit)
 
-Butuh Node.js 18+ (nodejs.org).
+Butuh Node.js 22+ (nodejs.org). Node 18 & 20 sudah end-of-life.
 
 ```bash
 cd fotobox
@@ -209,7 +213,8 @@ npm start
 
 Buka http://localhost:3000
 
-Sudah ada 5 kode demo di `data/codes.json` (lihat isinya) — coba tombol
+Buat beberapa kode uji dengan `npm run codes -- 5` (hasilnya tercetak dan
+tersimpan di `data/batch-*.txt`) — lalu coba tombol
 **"🎟 Punya kode premium?"** dengan salah satu kode itu. Kode yang sudah dipakai
 akan ditolak selamanya (single-use).
 

@@ -14,9 +14,10 @@
 
 ## Ceklis
 
-- [ ] `npm test` lulus
-- [ ] `npm run test:coverage` lulus (cakupan tidak turun)
-- [ ] `npm run sim` lulus (halaman photobox masih hidup)
+- [ ] `npm run ci` lulus (lint, typecheck, tes, cakupan, simulasi, smoke test)
+- [ ] Tidak ada `<script>` inline / `onclick=""` baru di HTML (CSP melarangnya)
+- [ ] Teks dari server/pengguna yang masuk `innerHTML` lewat `esc()`
+- [ ] Angka dari klien yang menentukan memori/CPU (ukuran, jumlah) dijepit di server
 - [ ] Perubahan logika disertai tes
 - [ ] Tidak ada rahasia / berkas `data/` ikut ter-commit
 - [ ] Kalau menyentuh strip: ukuran cetak tetap **51 x 152 mm** di atas A4

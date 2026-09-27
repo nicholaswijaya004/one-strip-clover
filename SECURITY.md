@@ -1,4 +1,103 @@
-# 🔒 AUDIT KEAMANAN & KESIAPAN PRODUKSI
+# 🔒 KEAMANAN — One Strip Clover
+
+## Melaporkan celah keamanan
+
+**Jangan** membuka issue publik untuk celah keamanan. Laporkan secara privat
+lewat tab **Security → Report a vulnerability** di repo GitHub ini (private
+vulnerability reporting). Kami menanggapi dalam 3 hari kerja.
+
+Cakupan: website produksi (Node — `server.js`, `lib/`, `public/`).
+`backend-go/` dan `frontend-react/` adalah proyek belajar, belum dipakai produksi.
+
+---
+
+# AUDIT #2 — September 2026 (sebelum rilis)
+
+Ditinjau dari tiga sudut: celah yang bisa membuat perusahaan **rugi uang**,
+bug yang bisa membuat website **tumbang** (beban/DoS), dan **arsitektur**.
+Semua temuan di bawah sudah diperbaiki dan dijaga tes (`test/http.test.js`,
+`test/hardening.test.js`, `scripts/smoke-test.sh`).
+
+## KRITIS
+
+### A1. Satu kode premium bisa mematikan server kapan saja
+**Dampak:** `/api/render-strip` meneruskan `a4Width`, `stripWidth`, `aspect`
+dari browser apa adanya ke pembuat kanvas. `a4Width=100000` → kanvas
+100.000 × 141.429 piksel (±56 GB) → proses mati kehabisan memori. Cukup beli
+satu kode (±Rp 15 rb) untuk mematikan website berulang-ulang, 30×/jam.
+
+**Perbaikan:** semua ukuran dijepit di server (`lib/render.js` → `BATAS`).
+Terbukti: permintaan serangan yang sama kini menghasilkan A4 300 dpi normal
+dalam 0,16 detik.
+
+### A2. Bom dekompresi & berkas palsu di foto kiriman
+**Dampak:** JPEG 8 MB bisa berukuran 30.000 × 30.000 piksel (±3,6 GB saat
+di-decode) → server mati. "Foto" juga bisa berisi HTML/EXE yang ikut
+terlampir di email studio dengan nama `.jpg` (phishing ke staf sendiri).
+
+**Perbaikan:** `lib/images.js` membaca jenis (magic bytes) dan dimensi dari
+HEADER berkas — murah, tanpa decode — lalu menolak yang bukan JPEG/PNG atau
+melebihi 24 MP. Dipakai di `/api/render-strip`, `/api/fallback-upload`,
+dan unggah template admin.
+
+### A3. Body 25 MB di-parse SEBELUM token diperiksa
+**Dampak:** Siapa pun, TANPA kode, bisa mengirim ratusan body 25 MB ke
+`/api/fallback-upload` / `/api/render-strip`. Server sibuk mem-parse JSON
+raksasa sampai memori habis.
+
+**Perbaikan:** `largeBodyGate` (lib/http/middleware.js) memeriksa rate limit
+per IP, token (dari header `Authorization: Bearer`) atau kunci admin, dan
+jatah paralel global (maks. 6 unggahan + 2 render bersamaan) — SEBELUM body
+dibaca. Tanpa token → 403 seketika.
+
+### A4. Nodemailer versi lama dengan celah tingkat HIGH
+**Dampak:** 12 advisori, termasuk email terkirim ke domain penyerang lewat
+alamat yang dimanipulasi (email pembeli dipakai sebagai Reply-To) dan
+injeksi perintah SMTP.
+
+**Perbaikan:** nodemailer 6 → 10, googleapis 140 → 182, `qs` ditambal.
+`npm audit` bersih; CI kini gagal kalau ada celah ≥ moderate.
+
+## PENTING
+
+| # | Temuan | Dampak | Perbaikan |
+|---|---|---|---|
+| B1 | `SESSION_SECRET` jatuh ke `ADMIN_KEY` kalau kosong | Satu kebocoran membuka dua pintu | Produksi (`NODE_ENV=production`) menolak hidup tanpa `SESSION_SECRET` ≥ 32 karakter yang berbeda dari `ADMIN_KEY` (`lib/env.js`) |
+| B2 | Rate limit per alamat IPv6 | Penyerang punya 2⁶⁴ alamat per pelanggan → tebak kode tanpa batas | IPv6 dihitung per blok /64 |
+| B3 | Kode 6 karakter + bias modulo | ±88 rb tebakan untuk dapat 1 kode gratis (dengan 10 rb kode beredar) | Kode baru 8 karakter (31⁸ ≈ 852 miliar), `crypto.randomInt` tanpa bias. Kode lama tetap berlaku |
+| B4 | `trust proxy` tetap 1 | Tanpa proxy di depan, header `X-Forwarded-For` palsu = IP baru tiap permintaan | `TRUST_PROXY` bisa disetel |
+| B5 | Kunci pesanan basi 2 menit, SMTP bisa menggantung 10 menit | Pesanan kedua lolos saat yang pertama masih dikirim → jatah cetak+ongkir jebol | Timeout SMTP 45 dtk & Drive 90 dtk; kunci basi 5 menit |
+| B6 | Putaran coba-ulang antrean bisa tumpang tindih | Studio menerima email ganda untuk satu pesanan | Penjaga `sedangJalan` |
+| B7 | `'unsafe-inline'` di CSP script | Satu celah XSS = skrip penyerang jalan (mencuri `ADMIN_KEY` dari panel admin) | Semua skrip dipindah ke `public/js/`; CSP `script-src 'self'` |
+| B8 | Nama template & setelan toko ke `innerHTML` hanya dibuang `<>` | Tanda kutip keluar dari atribut → XSS di panel admin | Helper `esc()` di semua titik; tautan toko hanya `http(s)` |
+| B9 | Pesan error SMTP/Drive dikirim ke browser | Membocorkan host/email studio | Hanya kode error; detail di log (dengan `rid`) |
+| B10 | `/healthz` publik berisi stok kode & konfigurasi | Info bisnis bocor ke pesaing | Publik hanya `ok`; detail butuh `x-admin-key` |
+| B11 | Perbandingan `ADMIN_KEY` membocorkan panjangnya | Mempermudah tebakan | Keduanya di-hash SHA-256 dulu |
+| B12 | `req.body.code` berupa objek → 500; `codes["__proto__"]` | Crash handler / sentuhan prototipe | Cek tipe & `hasOwnProperty` |
+| B13 | Tanpa timeout header/request HTTP | Slowloris menahan koneksi selamanya | `headersTimeout` 20 dtk, `requestTimeout` 5 mnt |
+| B14 | Jatah pesanan di respons dibaca dari env, bukan setelan /admin | Angka di layar pembeli ≠ aturan sebenarnya | Selalu dari `settings` |
+| B15 | `retakeArmed`/`retakeTimer` tidak dideklarasikan (ditemukan ESLint) | Variabel global tak sengaja; crash di mode strict | Dideklarasikan |
+
+## ARSITEKTUR
+
+* **Cache `codes.json` di memori** (`lib/store.js`): dulu dibaca + di-parse
+  ulang di SETIAP permintaan (sinkron, memblokir). Kini hanya dibaca ulang
+  kalau berkas berubah (dicek via `stat`), jadi skrip terminal tetap terlihat.
+* **`server.js` bisa di-`require`** (`module.exports = { app, start }`) →
+  tes HTTP sungguhan tanpa menyalakan proses terpisah.
+* **Rute admin dipisah** ke `lib/http/admin-routes.js` (dependensi disuntikkan).
+* **Proyek Go kini ter-build** (sebelumnya `go build` gagal) dan diuji `-race`.
+
+## Batas yang masih ada (disadari)
+
+* Rate limit, kunci pesanan, dan cache ada di memori **satu proses**.
+  Menjalankan 2+ instance memerlukan Redis + basis data (lihat PRODUCTION.md).
+* Premium di browser tetap bisa "dipaksa" untuk pratinjau, tapi unduhan HD
+  bersih & pesanan cetak hanya dibuat server dengan token sah.
+
+---
+
+# AUDIT #1 — Agustus 2026
 
 Hasil pemeriksaan kode per Agustus 2026. Setiap temuan diberi tingkat
 keparahan, penjelasan dampaknya, dan status perbaikannya.
