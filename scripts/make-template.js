@@ -96,7 +96,7 @@ const ph = PX(L.photoHmm);
 const top = PX(L.topMm);
 const gap = PX(L.gapMm);
 const x = (W - pw) / 2;
-const tebalBingkai = Math.round(PX(1.0)); // 1 mm
+
 
 // Bingkai foto: mat krem lebar + garis rambut aksen di luarnya.
 // Mat memberi jeda visual antara foto dan latar — kesan cetakan studio.

@@ -173,10 +173,12 @@ global.setInterval = () => 0;
 global.matchMedia = global.window.matchMedia;
 global.scrollTo = () => {};
 
-// ---- jalankan skrip halaman ----
-const i = html.lastIndexOf("<script>");
-const j = html.lastIndexOf("</script>");
-const script = html.slice(i + 8, j);
+// ---- jalankan skrip halaman (berkas terpisah — CSP melarang skrip inline) ----
+if (/<script>(?!<\/script>)/.test(html)) {
+  console.log("❌ booth.html masih punya <script> inline — CSP akan memblokirnya");
+  process.exit(1);
+}
+const script = fs.readFileSync(path.join(ROOT, "public", "js", "booth.js"), "utf8");
 
 console.log("\n=== MENJALANKAN HALAMAN ===\n");
 let jalan = true;

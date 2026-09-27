@@ -355,7 +355,6 @@
 
     // Setelah diputar 90°, TINGGI strip terbentang mendatar
     var scale = tersedia / sh;
-    var lebarTergambar = sh * scale;
     var tinggiTergambar = sw * scale;
     var jarak = A4W * 0.03;
 

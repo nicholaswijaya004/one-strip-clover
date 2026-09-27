@@ -12,15 +12,27 @@ on:
   pull_request_review:
     types: [submitted]
 
+# Hak bawaan minimum; job di bawah meminta yang ia perlukan saja.
+permissions:
+  contents: read
+
 jobs:
   assist:
-    # Hanya jalan kalau benar-benar ada sebutan @claude — supaya tidak
-    # menghabiskan kuota di setiap komentar biasa.
+    # Hanya jalan kalau ada sebutan @claude DAN yang memanggil adalah pemilik /
+    # anggota / kolaborator repo. Repo ini publik: tanpa syarat kedua, orang
+    # asing bisa menyuruh bot yang punya hak tulis (prompt injection) sekaligus
+    # menghabiskan kuota API berbayar.
     if: |
-      contains(github.event.comment.body, '@claude') ||
-      contains(github.event.issue.body, '@claude') ||
-      contains(github.event.review.body, '@claude')
+      (
+        contains(github.event.comment.body, '@claude') ||
+        contains(github.event.issue.body, '@claude') ||
+        contains(github.event.review.body, '@claude')
+      ) && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'),
+        github.event.comment.author_association ||
+        github.event.issue.author_association ||
+        github.event.review.author_association)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
       pull-requests: write
@@ -28,11 +40,11 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@756cc22e19660d20e8cc9496b4f242475a7f7790 # v1.0.235
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |

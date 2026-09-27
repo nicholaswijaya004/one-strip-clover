@@ -1,76 +1,128 @@
 name: CI
 
-# Jalan di setiap push ke main dan setiap pull request.
-# Tujuannya sederhana: jangan sampai ada kode masuk ke main yang
-# membuat tes gagal, menurunkan cakupan tes, atau membocorkan rahasia.
+# Jalan di setiap push ke main, setiap pull request, dan dipanggil ulang
+# oleh workflow rilis (workflow_call) — rilis TIDAK boleh lolos tanpa
+# semua pemeriksaan yang sama dengan PR.
+#
+# Job di sini = "required status checks" di aturan branch main
+# (lihat .github/rulesets/main.json). Nama job JANGAN diganti tanpa
+# memperbarui aturan itu — PR akan menggantung menunggu cek yang tidak ada.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+# Hak minimum. Tiap job meminta tambahan sendiri kalau perlu.
+permissions:
+  contents: read
 
 # Batalkan run lama kalau ada push baru di branch yang sama —
-# hemat waktu antre dan kuota.
+# hemat waktu antre dan kuota. Push ke main tidak dibatalkan.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: "22"
 
 jobs:
-  # ---------------------------------------------------------------- tes
-  test:
-    name: Tes & cakupan (Node ${{ matrix.node }})
+  # ------------------------------------------------------------------ lint
+  lint:
+    name: lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Node 20 = LTS lama yang masih banyak dipakai hosting,
-        # Node 22 = yang kita pakai di produksi.
-        node: [20, 22]
-
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Siapkan Node ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: ${{ matrix.node }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - name: Pasang dependensi
-        run: npm ci
+      - run: npm ci
+
+      - name: ESLint (bug & keamanan JS)
+        run: npm run lint
+
+      - name: TypeScript strict (frontend-react)
+        run: npm run typecheck
+
+      - name: Tidak ada skrip inline di HTML (CSP melarangnya)
+        run: |
+          set -e
+          gagal=0
+          for f in public/*.html; do
+            if grep -nE '<script>|<script [^>]*>[^<]+</script>| on[a-z]+="' "$f"; then
+              echo "✗ $f punya skrip / handler inline — pindahkan ke public/js/"; gagal=1
+            fi
+          done
+          exit $gagal
+
+
+      - name: actionlint (workflow GitHub Actions)
+        run: |
+          set -e
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/914e7df21a07ef503a81201c76d2b11c789d3fca/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+
+  # ----------------------------------------------------------------- build
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Pasang dependensi produksi saja (seperti di server)
+        run: npm ci --omit=dev
 
       - name: Periksa sintaks semua berkas JS
         run: |
           set -e
-          for f in server.js lib/*.js scripts/*.js; do
+          for f in server.js lib/*.js lib/http/*.js scripts/*.js public/js/*.js public/shared/*.js; do
             node --check "$f"
           done
-          echo "✓ sintaks server & lib aman"
+          echo "✓ sintaks aman"
 
-      - name: Periksa sintaks skrip di dalam HTML
-        run: |
-          node -e '
-            const fs = require("fs");
-            let gagal = 0;
-            for (const f of ["public/index.html", "public/booth.html", "public/admin.html"]) {
-              const h = fs.readFileSync(f, "utf8");
-              const i = h.lastIndexOf("<script>"), j = h.lastIndexOf("</script>");
-              if (i < 0) { console.log("· " + f + " (tanpa skrip)"); continue; }
-              try { new Function(h.slice(i + 8, j)); console.log("✓ " + f); }
-              catch (e) { console.error("✗ " + f + ": " + e.message); gagal++; }
-            }
-            process.exit(gagal ? 1 : 0);
-          '
+      - name: Semua modul server bisa dimuat tanpa devDependencies
+        run: node -e 'for (const m of ["./lib/images","./lib/env","./lib/limiter","./lib/http/middleware","./lib/http/admin-routes","./lib/delivery","./lib/render"]) require(m); console.log("✓ modul termuat")'
 
-      - name: Jalankan tes
-        run: npm test
 
-      - name: Tes + ambang cakupan
-        # --test-coverage-lines/functions/branches/exclude baru ada di Node
-        # test runner sejak rilis "Current" yang jadi Node 22 — TIDAK di-
-        # backport ke Node 20 (LTS). Node 20 tetap dites penuh lewat langkah
-        # "Jalankan tes" di atas; ambang cakupan hanya ditegakkan di Node 22+.
-        if: matrix.node >= 22
+  # ------------------------------------------------------------------ test
+  test:
+    name: test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 = LTS yang dipakai produksi, 24 = LTS berikutnya (siap upgrade)
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tes unit + HTTP + ambang cakupan
         run: npm run test:coverage
 
       - name: Simulasi browser (halaman photobox benar-benar hidup)
@@ -78,61 +130,63 @@ jobs:
           npm run sim
           UJI_TEMPLATE=1 npm run sim
 
-  # -------------------------------------------------------------- smoke
-  smoke:
-    name: Server benar-benar bisa hidup
+  # ----------------------------------------------------------- integration
+  integration:
+    name: integration
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 10
+    needs: [build]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
 
-      - name: Nyalakan server & periksa halaman
-        env:
-          PORT: 3123
-          ADMIN_KEY: kunci-uji-ci
-          SESSION_SECRET: rahasia-uji-ci-yang-cukup-panjang
-        run: |
-          set -e
-          npm start &
-          SERVER_PID=$!
-          # tunggu sampai siap (maks 30 detik)
-          for i in $(seq 1 30); do
-            if curl -sf "http://localhost:$PORT/healthz" > /dev/null; then break; fi
-            sleep 1
-          done
+      - name: Pasang dependensi produksi saja (seperti di server)
+        run: npm ci --omit=dev
 
-          echo "--- /healthz ---"
-          curl -sf "http://localhost:$PORT/healthz" | tee /tmp/health.json
-          echo
+      # Server SUNGGUHAN, NODE_ENV=production, diserang dari luar:
+      # header keamanan, kontrol akses, anti-DoS, anti tebak-kode.
+      - name: Smoke test produksi
+        run: bash scripts/smoke-test.sh
 
-          echo "--- halaman ---"
-          for jalur in / /booth /admin /api/config /api/template; do
-            kode=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT$jalur")
-            echo "$jalur → $kode"
-            [ "$kode" = "200" ] || { echo "✗ $jalur gagal"; kill $SERVER_PID; exit 1; }
-          done
-
-          echo "--- admin harus MENOLAK tanpa kunci ---"
-          kode=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-            -H "Content-Type: application/json" -d '{}' \
-            "http://localhost:$PORT/api/admin/stats")
-          echo "/api/admin/stats tanpa kunci → $kode"
-          [ "$kode" = "401" ] || { echo "✗ endpoint admin tidak terlindungi!"; kill $SERVER_PID; exit 1; }
-
-          kill $SERVER_PID
-          echo "✓ smoke test lulus"
-
-  # -------------------------------------------------------------- jaga
-  guard:
-    name: Tidak ada rahasia / data ikut ter-commit
+  # -------------------------------------------------------------- security
+  audit:
+    name: dependency-audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: npm audit (dependensi produksi, moderate ke atas)
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Tanda tangan paket npm terverifikasi
+        run: |
+          npm ci --ignore-scripts
+          npm audit signatures
+
+
+  secrets:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # seluruh riwayat — rahasia yang "sudah dihapus" tetap bocor
+          persist-credentials: false
 
       - name: Pastikan berkas terlarang tidak terlacak git
         run: |
@@ -154,10 +208,10 @@ jobs:
           fi
           exit $gagal
 
-      - name: Cari pola rahasia di dalam kode
+      - name: Cari pola rahasia khas proyek ini
         run: |
           set -e
-          # App password Gmail = 16 huruf kecil; token refresh Google diawali 1//
+          # token refresh Google diawali 1//, kunci API Google AIza, kunci Anthropic sk-ant-
           pola='(1//[0-9A-Za-z_-]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-ant-[0-9A-Za-z_-]{20,})'
           if git grep -nIE "$pola" -- ':!*.md' ':!package-lock.json' > /tmp/temuan.txt 2>/dev/null; then
             echo "✗ kemungkinan rahasia tertulis di kode:"
@@ -165,3 +219,30 @@ jobs:
             exit 1
           fi
           echo "✓ tidak ditemukan pola rahasia"
+
+      - name: Gitleaks (seluruh riwayat git)
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  # ---------------------------------------------------------- satu gerbang
+  # Satu cek yang dijadikan "required" di aturan branch. Kalau nanti job
+  # ditambah/diganti nama, cukup ubah daftar `needs` di sini — aturan
+  # branch tidak perlu disentuh.
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [lint, build, test, integration, audit, secrets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Semua job wajib lulus
+        env:
+          HASIL: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "$HASIL"
+          if echo "$HASIL" | grep -qE '"(failure|cancelled|skipped)"'; then
+            echo "✗ ada job yang tidak lulus"; exit 1
+          fi
+          echo "✓ semua pemeriksaan lulus"

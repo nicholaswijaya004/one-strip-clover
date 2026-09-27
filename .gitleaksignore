@@ -1,0 +1,7 @@
+# Temuan gitleaks yang SUDAH diperiksa dan bukan rahasia sungguhan.
+# Format: <commit>:<berkas>:<rule>:<baris>   (sidik dari laporan gitleaks)
+#
+# Nilai SESSION_SECRET khusus tes di test/http.test.js pada commit awal PR #8.
+# Tidak pernah dipakai di server mana pun; tesnya kini membuat rahasia acak
+# saat berjalan, jadi tidak ada lagi literal rahasia di kode.
+7408f83ac1902d6049a777818ed1e104ccc637e6:test/http.test.js:generic-api-key:11

@@ -1,0 +1,16 @@
+# Pemilik kode — otomatis diminta me-review PR yang menyentuh berkas ini.
+# Berkas yang menyentuh UANG & KEAMANAN sengaja disebut terpisah supaya
+# jelas mana yang wajib dibaca pelan-pelan.
+
+*                                   @nicholaswijaya004
+
+# Kode akses, token, redeem = pendapatan
+/lib/codes.js                       @nicholaswijaya004
+/lib/redeem.js                      @nicholaswijaya004
+/lib/tokens.js                      @nicholaswijaya004
+/lib/env.js                         @nicholaswijaya004
+/lib/http/                          @nicholaswijaya004
+/server.js                          @nicholaswijaya004
+
+# Pipeline & aturan repo — mengubahnya bisa mematikan semua pengaman
+/.github/                           @nicholaswijaya004

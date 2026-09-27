@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildPublicConfig, bersih, nomorWa } = require("../lib/config");
+const { buildPublicConfig, nomorWa } = require("../lib/config");
 
 test("config: link & harga dari .env diteruskan apa adanya", () => {
   const c = buildPublicConfig({
@@ -30,11 +30,15 @@ test("config: placeholder yang belum diganti tidak dianggap link", () => {
   });
   assert.equal(c.shops.tiktok, "", "link contoh dengan ... harus diabaikan");
   assert.equal(c.shops.shopee, "", "example.com harus diabaikan");
+  // host yang hanya MENGANDUNG teks example.com bukan tautan contoh
+  const asli = buildPublicConfig({ SHOP_SHOPEE: "https://shopee.co.id/example.com-case" });
+  assert.equal(asli.shops.shopee, "https://shopee.co.id/example.com-case");
   assert.equal(c.hasShop, false);
 });
 
 test("config: hanya http/https yang diterima (anti javascript:)", () => {
   const c = buildPublicConfig({
+    // eslint-disable-next-line no-script-url -- justru inilah yang diuji
     SHOP_TOKOPEDIA: "javascript:alert(1)",
     SHOP_SHOPEE: "tokopedia.com/tanpa-protokol",
     SHOP_TIKTOK: "http://boleh.test/x",

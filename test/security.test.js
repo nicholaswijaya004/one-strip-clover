@@ -4,18 +4,22 @@ const fs = require("fs");
 const path = require("path");
 
 const server = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
+// Rute admin dipindah ke modulnya sendiri (SRP) — dicek bersama server.js
+const adminRoutes = fs.readFileSync(
+  path.join(__dirname, "..", "lib", "http", "admin-routes.js"), "utf8"
+);
 const fmt = require("../lib/format");
 
 test("keamanan: ADMIN_KEY dibandingkan tahan timing-attack", () => {
-  assert.ok(server.includes("timingSafeEqual"), "harus pakai crypto.timingSafeEqual");
+  assert.ok(adminRoutes.includes("timingSafeEqual"), "harus pakai crypto.timingSafeEqual");
   assert.ok(
-    !/x-admin-key"\) === key/.test(server),
+    !/x-admin-key"\) === key/.test(adminRoutes + server),
     "perbandingan === langsung masih ada"
   );
 });
 
 test("keamanan: semua rute admin dibatasi percobaannya", () => {
-  const rute = [...server.matchAll(/app\.post\(\s*"(\/api\/admin\/[^"]+)"([^)]*)/g)];
+  const rute = [...(server + adminRoutes).matchAll(/app\.post\(\s*"(\/api\/admin\/[^"]+)"([^)]*)/g)];
   assert.ok(rute.length >= 3, "harus ada minimal 3 rute admin");
   for (const [, jalur, sisa] of rute) {
     assert.ok(
@@ -77,7 +81,7 @@ test("keamanan: crash tak tertangani membuat proses keluar (bukan lanjut rusak)"
 });
 
 test("produksi: ada health check untuk monitoring", () => {
-  assert.ok(server.includes('app.get("/healthz"'), "endpoint /healthz belum ada");
+  assert.match(server, /app\.get\(\s*"\/healthz"/, "endpoint /healthz belum ada");
 });
 
 test("produksi: menangani SIGTERM agar pesanan berjalan tidak hilang saat deploy", () => {
@@ -182,8 +186,29 @@ test("CI: smoke test memastikan endpoint admin menolak tanpa kunci", () => {
   const ci = fs.readFileSync(
     path.join(__dirname, "..", ".github", "workflows", "ci.yml"), "utf8"
   );
-  assert.ok(ci.includes("/api/admin/stats"), "harus menguji endpoint admin");
-  assert.ok(ci.includes('"401"'), "harus memastikan tanpa kunci ditolak 401");
+  const smoke = fs.readFileSync(path.join(__dirname, "..", "scripts", "smoke-test.sh"), "utf8");
+  assert.ok(ci.includes("scripts/smoke-test.sh"), "CI harus menjalankan smoke test");
+  assert.ok(smoke.includes("/api/admin/stats"), "harus menguji endpoint admin");
+  assert.match(smoke, /admin tanpa kunci → 401" 401/, "harus memastikan tanpa kunci ditolak 401");
+});
+
+test("CI: semua action pihak ketiga di-pin ke SHA commit (anti pembajakan tag)", () => {
+  const dir = path.join(__dirname, "..", ".github", "workflows");
+  for (const f of fs.readdirSync(dir)) {
+    const isi = fs.readFileSync(path.join(dir, f), "utf8");
+    for (const [, ref] of isi.matchAll(/uses:\s*([^\s#]+)/g)) {
+      if (ref.startsWith("./")) continue; // workflow lokal
+      assert.match(ref, /@[0-9a-f]{40}$/, `${f}: ${ref} belum di-pin ke SHA`);
+    }
+  }
+});
+
+test("CI: tiap workflow membatasi hak GITHUB_TOKEN di tingkat atas", () => {
+  const dir = path.join(__dirname, "..", ".github", "workflows");
+  for (const f of fs.readdirSync(dir)) {
+    const isi = fs.readFileSync(path.join(dir, f), "utf8");
+    assert.match(isi, /^permissions:/m, `${f}: tanpa blok permissions tingkat atas`);
+  }
 });
 
 test("CI: .gitignore menutup rahasia & data jalan", () => {

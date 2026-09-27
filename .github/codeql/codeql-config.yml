@@ -1,0 +1,11 @@
+# Konfigurasi CodeQL (dipakai .github/workflows/codeql.yml).
+#
+# Kode tes tidak ikut dijalankan di server — isinya sengaja memuat pola
+# "berbahaya" (URL contoh, payload serangan) untuk MENGUJI pertahanan.
+# Memindainya hanya menghasilkan alarm palsu yang menenggelamkan temuan asli.
+name: one-strip-clover
+queries:
+  - uses: security-extended
+paths-ignore:
+  - test
+  - node_modules

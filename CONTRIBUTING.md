@@ -28,22 +28,33 @@ Kamu harus admin di repo tersebut.
 > Tanpa secret ini, workflow lain (tes, cakupan, smoke test) tetap jalan —
 > hanya review Claude yang dilewati.
 
-### b. Kunci branch `main`
+### b. Kunci branch `main` (sekali impor)
 
-Supaya kode tidak bisa masuk ke `main` tanpa lewat CI:
+Aturannya sudah ditulis di `.github/rulesets/main.json`:
 
-**Settings → Branches → Add branch protection rule**
+**Settings → Rules → Rulesets → New ruleset → Import a ruleset** → pilih
+berkas itu → **Create**.
 
-- Branch name pattern: `main`
-- ✅ Require a pull request before merging
-- ✅ Require status checks to pass before merging
-  - pilih: `Tes & cakupan (Node 20)`, `Tes & cakupan (Node 22)`,
-    `Server benar-benar bisa hidup`, `Tidak ada rahasia / data ikut ter-commit`
-- ✅ Require branches to be up to date before merging
-- ✅ Do not allow bypassing the above settings
+Isinya: wajib lewat PR (squash), wajib lulus `ci-ok` + dua CodeQL +
+`dependency-review`, cabang harus mutakhir, riwayat linear, tidak boleh
+force-push/hapus `main`, dan CodeQL memblokir merge kalau ada temuan
+keamanan tingkat high.
 
-Kalau kamu bekerja sendirian, **jangan** centang "Require approvals" —
-kamu tidak bisa menyetujui PR-mu sendiri dan malah terkunci.
+> Aturan status check baru bisa dipilih setelah workflow-nya jalan sekali.
+> Kalau impor menolak nama cek, buat PR kecil dulu, tunggu CI selesai, lalu impor.
+
+Kalau kamu bekerja sendirian, jumlah approval sengaja **0** — kamu tidak
+bisa menyetujui PR-mu sendiri. Naikkan jadi 1 (dan nyalakan "Require review
+from Code Owners") begitu ada orang kedua di tim.
+
+### c. Nyalakan fitur keamanan GitHub (gratis untuk repo publik)
+
+**Settings → Code security**, nyalakan semua:
+
+- Dependency graph · Dependabot alerts · Dependabot security updates
+- Secret scanning + **Push protection** (menolak push yang berisi kunci)
+- Private vulnerability reporting (dipakai `SECURITY.md`)
+- Code scanning → biarkan memakai workflow `codeql.yml` di repo (bukan "Default setup")
 
 ---
 
@@ -66,10 +77,17 @@ Lalu buka PR di GitHub. Dalam ±2 menit kamu akan melihat:
 
 | Pemeriksaan | Yang dijaga |
 |---|---|
-| **Tes & cakupan** (Node 20 & 22) | 218 tes lulus, cakupan tidak turun |
-| **Server benar-benar bisa hidup** | server boot, semua halaman 200, endpoint admin menolak tanpa kunci |
-| **Tidak ada rahasia** | `.env` & `data/` tidak ikut ter-commit |
-| **Review oleh Claude** | komentar berisi temuan keamanan/logika |
+| **CI / lint** | ESLint (bug & keamanan), TypeScript strict, gofmt/go vet, actionlint, tanpa skrip inline |
+| **CI / build** | instal dependensi produksi saja, semua modul termuat, `go build` |
+| **CI / test (Node 22 & 24)** | 271 tes (unit + HTTP sungguhan) + ambang cakupan + simulasi browser |
+| **CI / integration** | server `NODE_ENV=production` diserang dari luar: header, akses admin, body raksasa, tebak kode |
+| **CI / dependency-audit** | `npm audit` (≥ moderate), tanda tangan paket |
+| **CI / secret-scan** | `.env` & `data/` tidak ter-commit, gitleaks di seluruh riwayat |
+| **CI / ci-ok** | satu gerbang: lulus hanya kalau SEMUA di atas lulus |
+| **CodeQL** (actions, JS/TS) | analisis keamanan statis, hasil di tab Security |
+| **Dependency Review** | dependensi baru tanpa celah & tanpa lisensi GPL/AGPL |
+| **Claude Review** | komentar berisi temuan keamanan/logika |
+| **OpenSSF Scorecard** (main, mingguan) | skor kebiasaan keamanan repo |
 
 Merge kalau semuanya hijau.
 
@@ -88,9 +106,12 @@ Tulis komentar di PR atau issue:
 
 ```bash
 npm test              # jalankan semua tes
+npm run lint          # ESLint
+npm run typecheck     # TypeScript strict (frontend-react)
 npm run test:coverage # tes + ambang cakupan (yang dipakai CI)
 npm run sim           # simulasi browser: halaman photobox benar-benar hidup?
-npm run ci            # ketiganya sekaligus — jalankan ini sebelum push
+npm run smoke         # server produksi sungguhan diserang dari luar
+npm run ci            # semuanya sekaligus — jalankan ini sebelum push
 npm start             # nyalakan server lokal
 ```
 
@@ -177,19 +198,34 @@ otomatis:
 
 ---
 
-## 8. Struktur repo
+## 8. Rilis
+
+```bash
+npm version patch          # 1.0.0 → 1.0.1 (commit + tag v1.0.1)
+git push --follow-tags
+```
+
+Workflow `release.yml` memastikan versi tag = `package.json`, commit-nya
+ada di `main`, menjalankan ULANG seluruh CI, baru membuat GitHub Release
+dengan catatan otomatis. Tag tanpa CI hijau tidak akan pernah jadi rilis.
+
+Semua action pihak ketiga di-pin ke SHA commit (tag bisa dipindah diam-diam
+oleh pemiliknya; SHA tidak). Dependabot memperbarui SHA-nya tiap minggu.
+
+## 9. Struktur repo
 
 ```
 lib/          logika inti (diuji unit, tanpa I/O kalau bisa)
-lib/http/     middleware Express (keamanan, rate limit, ukuran badan)
+lib/http/     middleware Express (keamanan, rate limit, gerbang body besar)
+              + admin-routes.js (semua /api/admin/*)
 lib/paths.js  satu-satunya tempat yang tahu lokasi folder data
 public/       halaman: index (depan), booth (photobox), admin
+public/js/    skrip halaman (TIDAK boleh inline — CSP melarangnya)
 public/shared/ kode yang dipakai browser DAN server:
                  contract.js      kode error, rute, batasan
                  strip-renderer.js penggambar strip
 scripts/      perkakas: generate kode, backup, template, simulasi
 test/         tes unit (node --test bawaan, tanpa framework)
 data/         data jalan — TIDAK ikut git, ada di volume server
-backend-go/   proyek belajar (Go + OOAD) — BELUM dipakai produksi
 frontend-react/ proyek belajar (React) — BELUM dipakai produksi
 ```

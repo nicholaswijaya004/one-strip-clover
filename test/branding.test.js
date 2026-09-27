@@ -5,7 +5,10 @@ const fs = require("fs");
 const path = require("path");
 
 const root = path.join(__dirname, "..");
-const index = fs.readFileSync(path.join(root, "public", "booth.html"), "utf8");
+// Halaman photobox = HTML + skripnya (dipisah supaya CSP bisa melarang skrip inline)
+const index =
+  fs.readFileSync(path.join(root, "public", "booth.html"), "utf8") +
+  fs.readFileSync(path.join(root, "public", "js", "booth.js"), "utf8");
 const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
 
 // Palet resmi dari company profile
@@ -64,8 +67,8 @@ test("brand: nomor pesanan & subject email pakai awalan OSC", () => {
 });
 
 test("konfigurasi: link toko tidak lagi ditulis di dalam HTML", () => {
-  assert.ok(!index.includes("vt.tiktok.com"), "link contoh masih tertinggal di HTML");
-  assert.ok(!index.includes("example.com"), "link contoh masih tertinggal di HTML");
+  assert.doesNotMatch(index, /vt\.tiktok\.com/, "link contoh masih tertinggal di HTML");
+  assert.doesNotMatch(index, /example\.com/, "link contoh masih tertinggal di HTML");
   assert.ok(index.includes("/api/config"), "frontend harus mengambil setelan dari server");
 });
 

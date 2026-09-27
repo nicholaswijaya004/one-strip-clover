@@ -1,21 +1,42 @@
 # Pembaruan dependensi otomatis.
-# Dibatasi bulanan supaya tidak membanjiri repo dengan PR kecil.
+#
+# Mingguan (bukan bulanan): patch keamanan tidak boleh menunggu sebulan.
+# Patch & minor digabung jadi satu PR per ekosistem supaya tidak banjir —
+# versi mayor tetap PR sendiri karena itu yang bisa merusak.
+# Pembaruan KEAMANAN (Dependabot security updates) tetap datang seketika,
+# terlepas dari jadwal ini — aktifkan di Settings → Code security.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: "/"
     schedule:
-      interval: monthly
-    open-pull-requests-limit: 5
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 10
     labels: [dependensi]
-    # Patch & minor digabung jadi satu PR — yang penting versi mayor,
-    # karena itu yang bisa merusak (mis. Node 18 → 20).
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
     groups:
-      minor-patch:
+      produksi-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+      dev-minor-patch:
+        dependency-type: development
         update-types: [minor, patch]
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: monthly
+      interval: weekly
+      day: monday
+      time: "03:00"
+      timezone: Asia/Jakarta
     labels: [ci]
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]

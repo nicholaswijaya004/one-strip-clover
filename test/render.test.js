@@ -6,7 +6,10 @@ const path = require('path');
 const renderer = require('../public/shared/strip-renderer.js');
 const render = require('../lib/render');
 const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
-const index = fs.readFileSync(path.join(__dirname, '..', 'public', 'booth.html'), 'utf8');
+// Halaman photobox = HTML + skripnya (dipisah supaya CSP bisa melarang skrip inline)
+const index =
+  fs.readFileSync(path.join(__dirname, '..', 'public', 'booth.html'), 'utf8') +
+  fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'booth.js'), 'utf8');
 
 /* ---- renderer bersama: satu sumber kebenaran untuk browser & server ---- */
 
@@ -36,19 +39,29 @@ test('renderer: TIDAK ada kode penggambar kembar di index.html', () => {
 
 /* --------------------------- endpoint premium --------------------------- */
 
-test('render: endpoint wajib memverifikasi token premium', () => {
-  // cari DEKLARASI rute-nya, bukan penyebutan namanya di daftar lain
+// Perilaku sesungguhnya (403 tanpa token, 429 saat kebanyakan) diuji lewat
+// HTTP di test/http.test.js. Di sini: gerbangnya memang terpasang.
+test('render: endpoint wajib memverifikasi token premium (sebelum body di-parse)', () => {
+  const gerbang = server.slice(server.indexOf('mw.largeBodyGate('), server.indexOf('app.use(mw.bodyParsers())'));
+  const blok = gerbang.slice(gerbang.indexOf('[ROUTE.RENDER]'), gerbang.indexOf('[ROUTE.ADMIN_TEMPLATE]'));
+  assert.ok(blok.includes('verifyToken'), 'token harus diperiksa');
+  assert.ok(blok.includes('rate:'), 'endpoint render harus dibatasi rate limit');
   const mulai = server.indexOf('app.post(\n  "/api/render-strip"');
   assert.ok(mulai > -1, 'deklarasi rute /api/render-strip tidak ditemukan');
-  const potongan = server.slice(mulai, mulai + 1400);
-  assert.ok(potongan.includes('verifyToken'), 'token harus diperiksa');
-  assert.ok(potongan.includes('PREMIUM_REQUIRED'), 'harus menolak tanpa token');
+  assert.ok(server.slice(mulai, mulai + 800).includes('PREMIUM_REQUIRED'), 'harus menolak tanpa token');
 });
 
-test('render: endpoint dibatasi rate limit', () => {
-  const mulai = server.indexOf('app.post(\n  "/api/render-strip"');
-  const potongan = server.slice(mulai, mulai + 500);
-  assert.ok(potongan.includes('rateLimit'), 'endpoint render harus dibatasi');
+test('render: ukuran kanvas dari klien selalu dijepit (anti OOM)', () => {
+  // Dulu a4Width=100000 → kanvas ±56 GB → server mati.
+  const { BATAS, jepit } = render;
+  assert.equal(jepit(100000, BATAS.LEBAR_A4, 2480), BATAS.LEBAR_A4[1]);
+  assert.equal(jepit(1e9, BATAS.LEBAR_STRIP, 1200), BATAS.LEBAR_STRIP[1]);
+  assert.equal(jepit(1e9, BATAS.ASPEK, 4 / 3), BATAS.ASPEK[1]);
+  assert.equal(jepit(-5, BATAS.ASPEK, 4 / 3), BATAS.ASPEK[0]);
+  assert.equal(jepit("abc", BATAS.LEBAR_STRIP, 1200), 1200);
+  // Tinggi kanvas terbesar yang mungkin tetap wajar (< 100 MP)
+  const a4 = renderer.a4Size(BATAS.LEBAR_A4[1]);
+  assert.ok(a4.width * a4.height < 100e6);
 });
 
 test('render: server mati-suri dengan rapi kalau canvas tidak terpasang', () => {

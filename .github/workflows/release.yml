@@ -1,0 +1,65 @@
+name: Release
+
+# Rilis = push tag versi, mis.:
+#     npm version patch        # 1.0.0 → 1.0.1, membuat commit + tag v1.0.1
+#     git push --follow-tags
+#
+# Tag hanya menjadi Release kalau SELURUH CI lulus lagi pada commit itu,
+# versi di tag sama dengan package.json, dan commitnya ada di main.
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: verify-tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Versi tag = versi package.json, commit ada di main
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -e
+          versi="v$(node -p 'require("./package.json").version')"
+          [ "$TAG" = "$versi" ] || { echo "✗ tag $TAG ≠ package.json $versi"; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "✗ commit tag belum ada di main — rilis hanya dari main"; exit 1; }
+          echo "✓ $TAG sah"
+
+  ci:
+    name: ci
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  release:
+    name: publish
+    needs: [verify, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # membuat GitHub Release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          generate_release_notes: true
+          draft: false
+          prerelease: false

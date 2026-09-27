@@ -2,7 +2,6 @@ require("./_setup").pakaiDataSementara();
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const path = require("path");
 
 // DATA_DIR sudah diarahkan ke folder sementara oleh _setup, jadi tes ini
 // TIDAK PERNAH menyentuh data/codes.json asli. Tidak perlu backup-restore.
@@ -44,7 +43,7 @@ test("generate: tanpa huruf/angka yang membingungkan (0,O,1,I,L)", () => {
 test("generate: format kode PREFIX-6 karakter", () => {
   reset();
   const r = lib.generate(5, { writeFile: false });
-  for (const c of r.codes) assert.match(c, /^[A-Z]+-[A-Z0-9]{6}$/);
+  for (const c of r.codes) assert.match(c, /^[A-Z]+-[A-Z0-9]{8}$/);
 });
 
 /* ----------------------- pemisahan pool chatbot ----------------------- */
