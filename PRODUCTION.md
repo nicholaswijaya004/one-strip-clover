@@ -31,9 +31,23 @@ Staging = situs sungguhan di internet untuk dicoba dulu, dengan domain gratis
    SESSION_SECRET=<openssl rand -hex 32>      ← tandai Sealed
    ADMIN_KEY=<openssl rand -hex 24>           ← tandai Sealed
    ```
-   Opsional untuk uji kirim ke studio: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
-   `SMTP_PASS` (Sealed), `SMTP_FROM`, `STUDIO_EMAIL`. Pakai **email uji**,
-   bukan inbox studio sungguhan. Link toko boleh dikosongkan di staging.
+   **Email pesanan** — Railway Trial/Hobby **memblokir SMTP keluar**, jadi
+   jalur utama adalah **Resend** (API HTTPS):
+   ```
+   STUDIO_EMAIL=<inbox penerima pesanan>
+   RESEND_API_KEY=re_...                      ← dari resend.com → API Keys
+   ```
+   Tanpa domain terverifikasi, Resend hanya mengirim ke **email pemilik akun
+   Resend** — daftar Resend memakai alamat `STUDIO_EMAIL`, atau verifikasi
+   domain lalu isi `RESEND_FROM`. `SMTP_*` boleh diisi sebagai cadangan
+   (dipakai otomatis kalau Resend gagal, tapi di Railway baru jalan di paket
+   Pro). Link toko boleh dikosongkan di staging.
+
+   > ⚠️ **Sealed:** tambahkan variabel rahasia (`SESSION_SECRET`, `ADMIN_KEY`,
+   > `RESEND_API_KEY`, `SMTP_PASS`) **tanpa di-seal dulu**, deploy, pastikan
+   > log start menunjukkan `ON`, baru **Seal** lewat menu ⋮. Menyegel variabel
+   > yang masih berstatus *staged* (belum pernah di-deploy) membuat nilainya
+   > hilang.
 5. **Settings → Networking → Generate Domain** → dapat
    `https://nama-app.up.railway.app`.
 6. **Deploy otomatis:** setiap merge ke `main` (yang sudah wajib lolos semua
@@ -101,7 +115,8 @@ penyimpanannya bisa diganti kapan saja tanpa mengubah kode.
 | `NODE_ENV` | `production` | tidak |
 | `SESSION_SECRET` | `openssl rand -hex 32` | **ya** |
 | `ADMIN_KEY` | `openssl rand -hex 24` — dibuat TERPISAH, harus beda dari `SESSION_SECRET` | **ya** |
-| `SMTP_PASS` | App Password Gmail / API key Brevo atau Resend | **ya** |
+| `RESEND_API_KEY` | resend.com → API Keys (jalur email utama; wajib di Railway Trial/Hobby) | **ya** |
+| `SMTP_PASS` | App Password Gmail (cadangan; SMTP diblokir Railway sebelum paket Pro) | **ya** |
 | `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | dari `npm run auth` | **ya** |
 | `SMTP_HOST`, `SMTP_USER`, `STUDIO_EMAIL`, link toko, harga, dll. | lihat `.env.example` | tidak |
 
@@ -115,7 +130,7 @@ bukan diam-diam tidak aman.
 |---|---|---|
 | `ADMIN_KEY` | kapan saja; WAJIB kalau pernah dibagikan / orang keluar dari tim | cukup login `/admin` dengan kunci baru |
 | `SESSION_SECRET` | segera kalau dicurigai bocor; selain itu saat sepi | pembeli premium yang sedang aktif perlu memasukkan kode sekali lagi (masih dalam masa tenggang, tidak rugi) |
-| `SMTP_PASS`, token Google | kalau bocor / akun diganti | ganti di Railway, lalu `npm run test-email` |
+| `RESEND_API_KEY`, `SMTP_PASS`, token Google | kalau bocor / akun diganti | ganti di Railway, lalu `npm run test-email` |
 
 Langkah: buat nilai baru → ganti di Railway → Railway deploy ulang otomatis
 → perbarui salinan di password manager.
