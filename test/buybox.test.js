@@ -4,20 +4,23 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * buyBoxState() hidup di dalam <script> pada index.html.
+ * buyBoxState() hidup di public/js/booth.js (skrip halaman photobox).
  * Diambil langsung dari file itu supaya yang diuji benar-benar kode
  * yang dipakai pengunjung — bukan salinan yang bisa ketinggalan zaman.
  */
 const html = fs.readFileSync(
-  path.join(__dirname, "..", "public", "booth.html"),
+  path.join(__dirname, "..", "public", "js", "booth.js"),
   "utf8"
 );
 
 const mulai = html.indexOf("function buyBoxState(");
 const selesai = html.indexOf("function renderBuyBox(");
-assert.ok(mulai !== -1 && selesai > mulai, "buyBoxState tidak ditemukan di index.html");
+assert.ok(mulai !== -1 && selesai > mulai, "buyBoxState tidak ditemukan di booth.js");
+const escMulai = html.indexOf("const esc=");
+const escSelesai = html.indexOf(";", html.indexOf("}[c]", escMulai)) + 1;
+assert.ok(escMulai !== -1, "helper esc() tidak ditemukan di booth.js");
 const buyBoxState = new Function(
-  html.slice(mulai, selesai) + "\nreturn buyBoxState;"
+  html.slice(escMulai, escSelesai) + "\n" + html.slice(mulai, selesai) + "\nreturn buyBoxState;"
 )();
 
 const toko = (links, wa) => ({ links, waAdmin: wa || "" });

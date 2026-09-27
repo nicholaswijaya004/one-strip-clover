@@ -21,12 +21,21 @@ test("kunci: setelah dilepas bisa dipakai lagi", () => {
   assert.equal(l.acquire("OSC-AAA111"), true, "pesanan kedua yang sah harus bisa jalan");
 });
 
-test("kunci: kunci menggantung >2 menit dianggap basi", () => {
+test("kunci: kunci menggantung lewat KUNCI_BASI_MS dianggap basi", () => {
+  const { LIMIT } = require("../public/shared/contract.js");
   const l = createLocks();
   const t0 = 1_000_000;
   l.acquire("OSC-AAA111", t0);
   assert.equal(l.acquire("OSC-AAA111", t0 + 60_000), false, "1 menit → masih terkunci");
-  assert.equal(l.acquire("OSC-AAA111", t0 + 121_000), true, "2 menit lewat → boleh lagi");
+  assert.equal(l.acquire("OSC-AAA111", t0 + LIMIT.KUNCI_BASI_MS + 1000), true, "lewat batas → boleh lagi");
+});
+
+test("kunci: batas basi LEBIH LAMA dari timeout pengiriman (jatah tidak jebol)", () => {
+  // Bug lama: kunci basi 2 menit, SMTP bisa menggantung 10 menit → pesanan
+  // kedua lolos saat yang pertama masih dikirim.
+  const { LIMIT } = require("../public/shared/contract.js");
+  const terlama = Math.max(LIMIT.SMTP_TIMEOUT_MS, LIMIT.DRIVE_TIMEOUT_MS);
+  assert.ok(LIMIT.KUNCI_BASI_MS > terlama * 2, "kunci basi harus jauh di atas timeout kirim");
 });
 
 test("kunci: tidak menumpuk di memori setelah dilepas", () => {

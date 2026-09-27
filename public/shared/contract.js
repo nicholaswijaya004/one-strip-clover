@@ -62,6 +62,7 @@
     TOO_BIG: "TOO_BIG",
     TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
     SERVER_ERROR: "SERVER_ERROR",
+    BUSY: "BUSY",                         // server penuh sesaat → coba lagi
 
     // --- hanya dibuat di sisi browser ---
     NETWORK: "NETWORK",
@@ -109,6 +110,8 @@
     ALAMAT_MIN: 12,
     DEVICE_ID: 64,
     LABEL: 180,
+    KODE_INPUT: 32,       // panjang maksimal kode yang diterima /api/redeem
+    TEKS_PENDEK: 120,     // gaya, filter, id bingkai, tanggal, alasan
 
     // foto
     FOTO_MAKS: 8,
@@ -127,9 +130,21 @@
     // lain-lain
     KODE_MAKS_SEKALI: 2000,
     TEMPLATE_MAKS_BYTE: 8 * 1024 * 1024,
-    KUNCI_BASI_MS: 2 * 60 * 1000,
+    // Lebih lama dari waktu kirim terlama (SMTP + Drive), supaya kunci tidak
+    // pernah dianggap basi saat pesanan yang sama MASIH diproses.
+    KUNCI_BASI_MS: 5 * 60 * 1000,
     SWEEP_MS: 10 * 60 * 1000,
     SHUTDOWN_MS: 25 * 1000,
+
+    // pekerjaan berat yang boleh jalan BERSAMAAN (bukan per jam)
+    UPLOAD_PARALEL: 6,    // parsing body besar sekaligus (RAM)
+    RENDER_PARALEL: 2,    // render kanvas HD sekaligus (CPU/RAM)
+
+    // batas waktu jaringan ke layanan luar
+    SMTP_TIMEOUT_MS: 45 * 1000,
+    DRIVE_TIMEOUT_MS: 90 * 1000,
+    HTTP_REQUEST_TIMEOUT_MS: 5 * 60 * 1000, // unggahan lambat dari HP masih lolos
+    HTTP_HEADERS_TIMEOUT_MS: 20 * 1000,     // anti slowloris
   };
 
   /** Nama rute — dipakai server & browser, tidak ada teks "/api/..." tersebar */

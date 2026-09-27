@@ -4,18 +4,22 @@ const fs = require("fs");
 const path = require("path");
 
 const server = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
+// Rute admin dipindah ke modulnya sendiri (SRP) — dicek bersama server.js
+const adminRoutes = fs.readFileSync(
+  path.join(__dirname, "..", "lib", "http", "admin-routes.js"), "utf8"
+);
 const fmt = require("../lib/format");
 
 test("keamanan: ADMIN_KEY dibandingkan tahan timing-attack", () => {
-  assert.ok(server.includes("timingSafeEqual"), "harus pakai crypto.timingSafeEqual");
+  assert.ok(adminRoutes.includes("timingSafeEqual"), "harus pakai crypto.timingSafeEqual");
   assert.ok(
-    !/x-admin-key"\) === key/.test(server),
+    !/x-admin-key"\) === key/.test(adminRoutes + server),
     "perbandingan === langsung masih ada"
   );
 });
 
 test("keamanan: semua rute admin dibatasi percobaannya", () => {
-  const rute = [...server.matchAll(/app\.post\(\s*"(\/api\/admin\/[^"]+)"([^)]*)/g)];
+  const rute = [...(server + adminRoutes).matchAll(/app\.post\(\s*"(\/api\/admin\/[^"]+)"([^)]*)/g)];
   assert.ok(rute.length >= 3, "harus ada minimal 3 rute admin");
   for (const [, jalur, sisa] of rute) {
     assert.ok(
@@ -77,7 +81,7 @@ test("keamanan: crash tak tertangani membuat proses keluar (bukan lanjut rusak)"
 });
 
 test("produksi: ada health check untuk monitoring", () => {
-  assert.ok(server.includes('app.get("/healthz"'), "endpoint /healthz belum ada");
+  assert.match(server, /app\.get\(\s*"\/healthz"/, "endpoint /healthz belum ada");
 });
 
 test("produksi: menangani SIGTERM agar pesanan berjalan tidak hilang saat deploy", () => {

@@ -44,7 +44,7 @@ test("generate: tanpa huruf/angka yang membingungkan (0,O,1,I,L)", () => {
 test("generate: format kode PREFIX-6 karakter", () => {
   reset();
   const r = lib.generate(5, { writeFile: false });
-  for (const c of r.codes) assert.match(c, /^[A-Z]+-[A-Z0-9]{6}$/);
+  for (const c of r.codes) assert.match(c, /^[A-Z]+-[A-Z0-9]{8}$/);
 });
 
 /* ----------------------- pemisahan pool chatbot ----------------------- */
