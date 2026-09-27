@@ -1,0 +1,52 @@
+name: 🐞 Laporan bug
+description: Ada yang tidak berjalan semestinya di website, /booth, atau /admin.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih sudah melapor! ⚠️ **Jangan** menulis kode premium, ADMIN_KEY,
+        alamat, atau data pribadi pembeli di sini — issue ini publik.
+  - type: dropdown
+    id: halaman
+    attributes:
+      label: Di halaman mana?
+      options: ["/ (halaman depan)", "/booth (photobox)", "/admin", "Email / Google Drive studio", "Lainnya"]
+    validations:
+      required: true
+  - type: textarea
+    id: kejadian
+    attributes:
+      label: Apa yang terjadi?
+      description: Jelaskan singkat, sertakan pesan error yang muncul di layar kalau ada.
+    validations:
+      required: true
+  - type: textarea
+    id: langkah
+    attributes:
+      label: Langkah untuk mengulanginya
+      placeholder: |
+        1. Buka /booth di Safari iPhone
+        2. Tekan "Mulai sesi"
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: harapan
+    attributes:
+      label: Seharusnya bagaimana?
+    validations:
+      required: true
+  - type: input
+    id: perangkat
+    attributes:
+      label: Perangkat & browser
+      placeholder: "iPhone 15, Safari 19 / Laptop Windows, Chrome 140"
+    validations:
+      required: true
+  - type: input
+    id: rid
+    attributes:
+      label: Request ID (opsional)
+      description: Header `X-Request-Id` dari respons / kolom `rid` di log. Membantu melacak kejadian di log server.

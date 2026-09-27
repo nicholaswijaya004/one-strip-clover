@@ -1,3 +1,30 @@
+<p align="center">
+  <img src=".github/assets/social-preview.png" alt="One Strip Clover — Satu strip. Satu kenangan. Satu keberuntungan." width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/nicholaswijaya004/one-strip-clover/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/nicholaswijaya004/one-strip-clover/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/nicholaswijaya004/one-strip-clover/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/nicholaswijaya004/one-strip-clover/actions/workflows/codeql.yml/badge.svg?branch=main"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/nicholaswijaya004/one-strip-clover"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/nicholaswijaya004/one-strip-clover/badge"></a>
+  <img alt="Node.js 22+" src="https://img.shields.io/badge/node-%E2%89%A522-8E8F3A">
+  <img alt="License: proprietary" src="https://img.shields.io/badge/license-proprietary-6C4862">
+</p>
+
+<p align="center">
+  <b>Photobox digital di browser</b> — berpose 3 kali, pilih bingkai, simpan stripnya,<br>
+  atau pesan cetakan asli 51 × 152 mm yang dikirim ke rumah.
+</p>
+
+<p align="center">
+  <a href="#1-jalankan-di-laptop-5-menit">Mulai</a> ·
+  <a href="PRODUCTION.md">Go-live</a> ·
+  <a href="SECURITY.md">Keamanan</a> ·
+  <a href="CONTRIBUTING.md">Kontribusi</a> ·
+  <a href="ARCHITECTURE.md">Arsitektur</a>
+</p>
+
+---
+
 # 🍀 ONE STRIP CLOVER
 
 *One strip, one memory, one lucky charm.*
@@ -5,6 +32,14 @@
 Photobox digital di browser + monetisasi kode akses
 sekali-pakai (dijual via TikTok Shop / Tokopedia / Shopee) + fallback kirim foto
 ke studio (email & Google Drive) untuk diproses manual.
+
+| | |
+|---|---|
+| **Stack** | Node.js 22 · Express · JavaScript murni di browser (tanpa framework, tanpa build) |
+| **Penyimpanan** | Berkas JSON di volume server (atomik, ter-cache) |
+| **Pengiriman** | Email (SMTP) + Google Drive, dengan antrean coba-ulang |
+| **Kualitas** | 271 tes · CodeQL · audit dependensi · pemindai rahasia · smoke test produksi di setiap PR |
+| **Lisensi** | Proprietary — kode terlihat publik, tapi tidak boleh dipakai ulang (lihat [LICENSE](LICENSE)) |
 
 Bekerja di semua perangkat: desktop, laptop, tablet/iPad, HP — satu URL yang sama.
 

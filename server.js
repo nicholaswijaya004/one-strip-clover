@@ -29,7 +29,8 @@ if (_major < 22) {
   process.exit(1);
 }
 
-require("dotenv").config();
+// quiet: dotenv 17+ mencetak baris iklan di setiap start — mengotori log produksi
+require("dotenv").config({ quiet: true });
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");

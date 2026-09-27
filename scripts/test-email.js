@@ -11,7 +11,7 @@
  * Kalau gagal, ia mencetak penyebab + cara memperbaikinya.
  */
 
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const nodemailer = require("nodemailer");
 
 const {

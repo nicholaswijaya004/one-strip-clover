@@ -1,0 +1,9 @@
+# Issue kosong dimatikan: setiap laporan lewat formulir supaya informasinya lengkap.
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Laporkan celah keamanan (privat)
+    url: https://github.com/nicholaswijaya004/one-strip-clover/security/advisories/new
+    about: JANGAN laporkan celah keamanan lewat issue publik — pakai jalur privat ini.
+  - name: 🛍️ Pertanyaan pembeli / pesanan
+    url: https://github.com/nicholaswijaya004/one-strip-clover#readme
+    about: Masalah kode premium atau pesanan cetak? Hubungi admin lewat WhatsApp di website, bukan di sini.

@@ -1,0 +1,26 @@
+name: ✨ Usulan fitur
+description: Ide untuk membuat One Strip Clover lebih baik.
+title: "[Fitur] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: masalah
+    attributes:
+      label: Masalah apa yang ingin dipecahkan?
+      description: Ceritakan dari sisi pembeli atau admin — bukan solusinya dulu.
+    validations:
+      required: true
+  - type: textarea
+    id: usulan
+    attributes:
+      label: Usulan solusi
+    validations:
+      required: true
+  - type: dropdown
+    id: dampak
+    attributes:
+      label: Menyangkut uang / keamanan?
+      description: Fitur yang menyentuh kode premium, pembayaran, atau data pembeli butuh tinjauan keamanan.
+      options: ["Tidak", "Ya — kode premium / pembayaran", "Ya — data pribadi pembeli"]
+    validations:
+      required: true
