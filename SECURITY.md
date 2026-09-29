@@ -294,3 +294,33 @@ Detail penting:
 * Font brand (lisensi OFL) ikut di repo, `assets/fonts/`; kalau ada yang hilang,
   log menampilkan `render.font_missing` dan `npm test` gagal.
 * Batas pemakaian dihitung **per kode** (30/jam), bukan per IP.
+
+### ✅ F. Bingkai premium & watermark bisa diakali — SUDAH DIPERBAIKI
+
+Masalahnya: kode desain bingkai premium (Blush, Mint, Plum) dulu ikut
+terkirim ke browser. Siapa pun yang paham DevTools bisa menggambar strip
+premium **bersih** tanpa membeli kode. Watermark versi gratis juga tipis dan
+polanya tetap, sehingga mudah dihapus aplikasi edit foto.
+
+Catatan jujur: situs web **tidak bisa** melarang screenshot atau rekam layar
+(WhatsApp & Netflix bisa karena aplikasi native/DRM video, bukan halaman web).
+Jadi yang dilindungi adalah hal yang tidak bisa didapat dari salinan layar.
+
+* Desain bingkai premium kini hanya ada di `lib/premium-frames.js` (server).
+  Browser menerima **gambar** pratinjaunya dari `POST /api/preview-strip`:
+  tanpa kode 360 px + watermark; dengan kode 720 px bersih. Thumbnail bingkai
+  premium juga gambar dari server (`GET /api/frame-thumb`).
+* Pratinjau terbuka tanpa login, jadi dijaga: dijatah per IP **sebelum** body
+  dibaca (120 / 10 menit), badan maksimal 600 KB, foto maksimal 720 px per
+  sisi (decode murah), dan antre di jatah render paralel yang sama dengan
+  unduhan HD.
+* Strip untuk dicetak studio dibuat **server** dari foto asli saat pesanan
+  masuk, bukan diambil dari browser.
+* Watermark gratis: rapat menutupi seluruh foto (termasuk wajah), dua warna
+  berselang, sudut & posisi acak per strip, tanpa pola tetap.
+* Sisa yang disadari: bingkai **gratis** tetap digambar browser, jadi orang
+  teknis bisa membuat strip bingkai gratis tanpa watermark. Nilai yang dijual
+  (bingkai premium, unduhan HD, cetakan asli yang dikirim) tetap terlindungi.
+* Ikut diperbaiki: tombol **Unduh versi gratis** dulu gagal diam-diam karena
+  CSP (`connect-src 'self'`) memblokir `fetch()` ke `data:`/`blob:`. Sekarang
+  berkasnya dibuat langsung tanpa `fetch`.

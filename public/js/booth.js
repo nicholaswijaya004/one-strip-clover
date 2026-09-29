@@ -236,29 +236,15 @@ $("filterSeg").addEventListener("click",(e)=>{
 });
 cam.style.filter=FILTERS.warna;
 
-/* -------- thumbnail mini tiap bingkai (biar kelihatan sebelum dipilih) -------- */
+/* -------- thumbnail mini tiap bingkai (biar kelihatan sebelum dipilih) --------
+   Bingkai gratis digambar di sini. Desain bingkai premium hanya ada di server,
+   jadi thumbnail-nya berupa gambar dari server. */
 function frameThumb(frame){
+  if(!StripRenderer.hasFrame(frame.id))
+    return ROUTE.FRAME_THUMB+"?id="+encodeURIComponent(frame.id);
   const W=104,H=148;
   const c=document.createElement("canvas"); c.width=W; c.height=H;
-  const x=c.getContext("2d");
-  const st=StripRenderer.frameStyle(frame.id);
-
-  x.fillStyle=st.bg; x.fillRect(0,0,W,H);
-  if(st.wash){ x.fillStyle=st.wash; x.fillRect(0,0,W,H); }
-
-  const pad=W*0.14, pw=W-pad*2, ph=pw*0.62, gap=H*0.045;
-  for(let i=0;i<3;i++){
-    const y=pad*0.8+i*(ph+gap);
-    x.fillStyle=st.dark?"#4A3A46":"#D7D0C4";
-    x.fillRect(pad,y,pw,ph);
-    x.fillStyle=st.dark?"#5D4A58":"#C3BAAB";
-    x.beginPath(); x.arc(pad+pw*0.5,y+ph*0.42,ph*0.22,0,Math.PI*2); x.fill();
-  }
-
-  StripRenderer.drawFrameDecor(x, frame.id, W, H, {thumb:true});
-
-  x.fillStyle=st.accent;
-  x.fillRect(pad,H-pad*0.85,pw,2.5);
+  StripRenderer.drawThumb(c.getContext("2d"), frame.id, W, H);
   return c.toDataURL("image/png");
 }
 
@@ -584,10 +570,107 @@ function loadImg(src){return new Promise((res,rej)=>{
   const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src;
 });}
 
+/* data:URL → Blob tanpa fetch(): CSP (connect-src 'self') memblokir fetch
+   ke data:/blob:, jadi dulu tombol Unduh versi gratis gagal diam-diam. */
+function dataUrlKeBlob(url){
+  const [kepala, isi] = url.split(",");
+  const mime = (kepala.match(/data:([^;]+)/)||[])[1] || "image/jpeg";
+  const biner = atob(isi);
+  const buf = new Uint8Array(biner.length);
+  for(let i=0;i<biner.length;i++) buf[i]=biner.charCodeAt(i);
+  return new Blob([buf],{type:mime});
+}
+
+const tanggalHariIni=()=>new Date().toLocaleDateString("id-ID",
+  {day:"2-digit",month:"short",year:"numeric"}).toUpperCase();
+
+/* Pratinjau bingkai premium dibuat SERVER (desainnya tidak ada di browser).
+   Foto dikecilkan dulu (sisi ≤ 720 px) supaya kirimannya ringan. */
+const PRATINJAU = { no:0, sumber:null, foto:null, cache:new Map() };
+function resetPratinjau(){
+  for(const v of PRATINJAU.cache.values()) URL.revokeObjectURL(v.url);
+  PRATINJAU.cache.clear(); PRATINJAU.sumber=null; PRATINJAU.foto=null;
+}
+async function fotoPratinjau(){
+  // identitas set foto tanpa menggabungkan string ratusan KB
+  const kunci=S.photos.map(p=>p.length+p.slice(-24)).join("|");
+  if(PRATINJAU.foto && PRATINJAU.sumber===kunci) return PRATINJAU.foto;
+  resetPratinjau();
+  const hasil=[];
+  for(const src of S.photos){
+    const img=await loadImg(src);
+    const k=Math.min(1, 720/Math.max(img.width,img.height));
+    const c=document.createElement("canvas");
+    c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    hasil.push(c.toDataURL("image/jpeg",0.8));
+  }
+  PRATINJAU.sumber=kunci; PRATINJAU.foto=hasil;
+  return hasil;
+}
+
+async function tampilkanPratinjauServer(frame){
+  const no=++PRATINJAU.no;
+  try{
+    const foto=await fotoPratinjau();
+    const kunci=`${frame.id}|${S.filter}|${S.premium?1:0}`;
+    let hasil=PRATINJAU.cache.get(kunci);
+    if(!hasil){
+      $("qualityHint").textContent="Menyiapkan pratinjau bingkai…";
+      const headers={"Content-Type":"application/json"};
+      if(S.premium && S.token) headers.Authorization="Bearer "+S.token;
+      const r=await fetch(ROUTE.PREVIEW,{method:"POST",headers,
+        body:JSON.stringify({photos:foto, frameId:frame.id, filter:S.filter, dateText:tanggalHariIni()})});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const blob=await r.blob();
+      hasil={blob, url:URL.createObjectURL(blob)};
+      PRATINJAU.cache.set(kunci,hasil);
+    }
+    if(no!==PRATINJAU.no) return;   // pengguna sudah memilih bingkai/filter lain
+    S.lastStrip=null;               // strip cetak dibuat server saat pesanan masuk
+    tampilkanStrip(hasil.url, hasil.blob, frame);
+  }catch(err){
+    if(no!==PRATINJAU.no) return;
+    console.warn("[OSC] pratinjau bingkai gagal:", err.message);
+    S.stripBlob=null;
+    $("stripImg").removeAttribute("src");
+    $("slotWrap").style.display="block";
+    $("qualityHint").innerHTML=
+      "Pratinjau bingkai ini belum bisa dimuat. Coba sebentar lagi, atau pilih bingkai lain.";
+  }
+}
+
+function tampilkanStrip(url, blob, frame){
+  S.stripBlob=blob;
+  const strip=$("stripImg");
+  strip.classList.remove("printed");
+  strip.src=url;
+  $("slotWrap").style.display="block";
+  $("howto").style.display="none";
+  requestAnimationFrame(()=>strip.classList.add("printed"));
+
+  const lockedPreview = frame.premium && !S.premium;
+  $("qualityHint").innerHTML = S.premium
+    ? "Kualitas HD tanpa watermark. Terima kasih! 🍀"
+    : lockedPreview
+      ? `Ini preview bingkai <b>premium</b> (watermark). <a href="#" id="hintUnlock">Buka dengan kode</a> untuk unduhan bersih &amp; HD.`
+      : `Versi gratis (watermark). <a href="#" id="hintUnlock">Punya kode premium?</a>`;
+  const hu=$("hintUnlock"); if(hu) hu.onclick=(e)=>{e.preventDefault();openOverlay("codeOverlay");};
+  strip.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+}
+
 async function composeStrip(opts){
   const o = opts || {};
   // o.studio = true → versi bersih untuk studio: HD, tanpa watermark,
   //                   tidak mengubah tampilan halaman
+  const frame=FRAMES[S.frameIdx];
+  // Desain bingkai premium hanya ada di server → minta gambar pratinjaunya.
+  // Strip cetaknya pun dibuat server saat pesanan masuk.
+  if(!frame.isTemplate && !StripRenderer.hasFrame(frame.id)){
+    if(o.studio) return null;
+    return tampilkanPratinjauServer(frame);
+  }
+  if(!o.studio) PRATINJAU.no++;     // batalkan pratinjau server yang masih jalan
   try{
     const HD = o.studio ? true : S.premium;
     const W  = o.studio ? 1200 : (HD ? 960 : 480);
@@ -601,9 +684,6 @@ async function composeStrip(opts){
     const c=document.createElement("canvas"); c.width=W; c.height=H;
     const ctx=c.getContext("2d");
 
-    const frame=FRAMES[S.frameIdx];
-    // Bingkai premium tetap bisa dilihat pemakai gratis (berwatermark) —
-    // ini yang mendorong mereka membeli kode.
     StripRenderer.drawStrip(ctx, images, {
       width:W, aspect:ASPECT,
       frameId:frame.id, filter:S.filter,
@@ -611,29 +691,14 @@ async function composeStrip(opts){
       templateImage: frame.isTemplate ? (TPL.images[frame.templateId] || null) : null,
       layout: frame.isTemplate ? frame.layout : StripRenderer.LAYOUT_BAWAAN,
       watermark: !S.premium && !o.studio,
-      dateText:new Date().toLocaleDateString("id-ID",
-        {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
+      dateText:tanggalHariIni(),
     });
 
     if(o.studio) return c.toDataURL("image/jpeg",0.95);
 
     const url=c.toDataURL("image/jpeg",0.92);
     S.lastStrip=url;
-    const strip=$("stripImg");
-    strip.classList.remove("printed");
-    strip.src=url;
-    $("slotWrap").style.display="block";
-    $("howto").style.display="none";
-    requestAnimationFrame(()=>strip.classList.add("printed"));
-
-    const lockedPreview = frame.premium && !S.premium;
-    $("qualityHint").innerHTML = S.premium
-      ? "Kualitas HD tanpa watermark. Terima kasih! 🍀"
-      : lockedPreview
-        ? `Ini preview bingkai <b>premium</b> (watermark). <a href="#" id="hintUnlock">Buka dengan kode</a> untuk unduhan bersih &amp; HD.`
-        : `Versi gratis (watermark). <a href="#" id="hintUnlock">Punya kode premium?</a>`;
-    const hu=$("hintUnlock"); if(hu) hu.onclick=(e)=>{e.preventDefault();openOverlay("codeOverlay");};
-    strip.scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"center"});
+    tampilkanStrip(url, dataUrlKeBlob(url), frame);
   }catch(err){
     console.error(err);
     if(o.studio) return null;
@@ -695,8 +760,7 @@ async function ambilStripUntukDiunduh(){
           photos:S.photos,
           frameId:FRAMES[S.frameIdx].id, filter:S.filter,
           aspect:ASPECT, width:1400,
-          dateText:new Date().toLocaleDateString("id-ID",
-            {day:"2-digit",month:"short",year:"numeric"}).toUpperCase(),
+          dateText:tanggalHariIni(),
         })});
       if(r.ok) return await r.blob();
 
@@ -708,9 +772,7 @@ async function ambilStripUntukDiunduh(){
     }catch(e){ /* jaringan bermasalah → jatuh ke versi browser */ }
   }
   // GRATIS (atau server render nonaktif): pakai gambar yang sudah tampil
-  const src=$("stripImg").src;
-  if(!src) return null;
-  return await (await fetch(src)).blob();
+  return S.stripBlob || null;
 }
 
 $("downloadBtn").onclick=async ()=>{
@@ -948,6 +1010,8 @@ $("studioSubmit").onclick=async ()=>{
     takenAt: S.takenAt || new Date().toISOString(),
     consent:true,
     strip:studioStrip||S.lastStrip||null,
+    // server membuat ulang strip cetak dari foto asli + pilihan ini
+    frameId:FRAMES[S.frameIdx].id, filter:S.filter, dateText:tanggalHariIni(),
     reason:S.genFailed?"generation_failed":"user_request",
     style:`filter=${S.filter}; bingkai=${FRAMES[S.frameIdx].name}`
   });

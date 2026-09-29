@@ -49,6 +49,7 @@ const { registerAdminRoutes } = require("./lib/http/admin-routes");
 const queue = require("./lib/queue");
 const delivery = require("./lib/delivery");
 const render = require("./lib/render");
+const renderer = require("./lib/premium-frames");
 const settings = require("./lib/settings");
 const template = require("./lib/template");
 
@@ -69,6 +70,9 @@ if (cekEnv.errors.length) {
 const orderLocks = createLocks();
 // Render kanvas HD itu berat: batasi yang jalan BERSAMAAN (lihat lib/limiter.js)
 const renderSlots = createLimiter(LIMIT.RENDER_PARALEL);
+// Jatah terpisah untuk pratinjau tanpa login — lalu lintas gratis tidak boleh
+// membuat unduhan HD pembeli yang sudah bayar menunggu.
+const previewSlots = createLimiter(LIMIT.RENDER_PARALEL);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -108,6 +112,12 @@ app.use(
       [ROUTE.RENDER]: {
         authorize: (req) => verifyToken(bearerToken(req)),
         rate: { windowMs: LIMIT.UPLOAD_WINDOW_MS, max: LIMIT.RENDER_IP_MAKS, key: "render-ip" },
+      },
+      // Pratinjau terbuka untuk semua (tanpa kode = versi kecil berwatermark),
+      // tapi tetap dijatah per IP SEBELUM body dibaca.
+      [ROUTE.PREVIEW]: {
+        authorize: (req) => verifyToken(bearerToken(req)) || { gratis: true },
+        rate: { windowMs: LIMIT.PRATINJAU_WINDOW_MS, max: LIMIT.PRATINJAU_MAKS, key: "preview" },
       },
       [ROUTE.ADMIN_TEMPLATE]: {
         authorize: (req) => adminOk(req),
@@ -461,6 +471,57 @@ app.post(
   }
 );
 
+/* ------------------ /api/preview-strip & /api/frame-thumb ------------------
+ * Desain bingkai premium hanya ada di server (lib/premium-frames.js). Browser
+ * meminta GAMBAR pratinjaunya di sini:
+ *   • tanpa kode : 360 px + watermark acak — cukup untuk "mau beli?", tidak
+ *                  layak dicetak, dan tidak ada kode desain yang bisa dicuri
+ *   • dengan kode: 720 px bersih (unduhan HD tetap lewat /api/render-strip)
+ */
+app.post(ROUTE.PREVIEW, async (req, res) => {
+  const premium = !!(req.auth && req.auth.code);
+  if (!render.tersedia()) {
+    return res.status(HTTP.NOT_IMPLEMENTED).json({ ok: false, error: ERR.RENDER_UNAVAILABLE });
+  }
+  if (!previewSlots.tryAcquire()) {
+    res.setHeader("Retry-After", 2);
+    return res.status(HTTP.UNAVAILABLE).json({ ok: false, error: ERR.BUSY });
+  }
+  try {
+    const body = req.body || {};
+    const buf = await render.renderPreview({
+      photos: body.photos,
+      frameId: body.frameId,
+      filter: body.filter,
+      dateText: body.dateText,
+      premium,
+    });
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader("Cache-Control", "no-store");
+    res.send(buf);
+  } catch (e) {
+    if (e.code === "BAD_PHOTO" || e.code === "BAD_FRAME") {
+      return res.status(HTTP.BAD_REQUEST)
+        .json({ ok: false, error: e.code === "BAD_FRAME" ? ERR.BAD_FRAME : ERR.BAD_PHOTO });
+    }
+    log.error("preview.failed", { rid: req.rid, msg: e.message });
+    res.status(HTTP.SERVER_ERROR).json({ ok: false, error: ERR.RENDER_FAILED });
+  } finally {
+    previewSlots.release();
+  }
+});
+
+app.get(ROUTE.FRAME_THUMB, (req, res) => {
+  if (!render.tersedia()) {
+    return res.status(HTTP.NOT_IMPLEMENTED).json({ ok: false, error: ERR.RENDER_UNAVAILABLE });
+  }
+  const png = render.renderThumb(String(req.query.id || ""));
+  if (!png) return res.status(HTTP.NOT_FOUND).json({ ok: false, error: ERR.BAD_FRAME });
+  res.setHeader("Content-Type", "image/png");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.send(png);
+});
+
 /* ------------------------ /api/fallback-upload ------------------------ */
 
 app.post(
@@ -529,6 +590,24 @@ app.post(
     return res.status(HTTP.BAD_REQUEST).json({ ok: false, error: ERR.BAD_PHOTO });
   }
 
+  // Strip untuk dicetak studio dibuat DI SERVER dari foto asli + pilihan
+  // bingkai. Wajib untuk bingkai premium (desainnya tidak ada di browser),
+  // dan lebih bisa dipercaya daripada gambar kiriman browser. Template
+  // unggahan admin tetap memakai strip dari browser.
+  let stripStudio = req.body.strip || null;
+  const frameIdPesanan = String(req.body.frameId || "");
+  if (render.tersedia() && renderer.FRAMES.some((f) => f.id === frameIdPesanan)) {
+    try {
+      const buf = await render.renderStrip({
+        photos, frameId: frameIdPesanan, filter: req.body.filter,
+        dateText: req.body.dateText, width: 1200,
+      });
+      stripStudio = `data:image/jpeg;base64,${buf.toString("base64")}`;
+    } catch (e) {
+      log.warn("studio.render_failed", { rid: req.rid, code, msg: e.message });
+    }
+  }
+
   // Kunci per kode: cegah dua pesanan berbarengan menembus jatah yang sama
   // (mis. tombol ditekan dua kali, atau dibuka di dua tab).
   if (!orderLocks.acquire(code)) {
@@ -548,7 +627,7 @@ app.post(
     style, takenAt, reason,
     // `a4` dari browser tidak dipakai lagi (PDF dibuat server) — tidak
     // disimpan supaya antrean di disk tidak membengkak.
-    photos, strip: req.body.strip || null,
+    photos, strip: stripStudio,
     // dipakai server untuk membuat ulang lembar A4 versi 300 dpi
     frameId: req.body.frameId || null,
     filter: req.body.filter || null,

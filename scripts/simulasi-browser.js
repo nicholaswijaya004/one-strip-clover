@@ -254,14 +254,15 @@ cek("Pemilih filter punya handler", !!catatan.handler["filterSeg:click"]);
     cek("Ganti bingkai tidak error", false, e.message);
   }
 
-  // 4. Thumbnail tiap bingkai digambar langsung
-  for (const f of renderer.FRAMES) {
+  // 4. Thumbnail tiap bingkai GRATIS digambar langsung (bingkai premium:
+  //    gambarnya dari server — desainnya sengaja tidak ada di browser)
+  for (const f of renderer.FRAMES.filter((b) => renderer.hasFrame(b.id))) {
     try {
       const c = buatCanvas(catatan);
       c.width = 104; c.height = 148;
       const x = c.getContext("2d");
       const st = renderer.frameStyle(f.id);
-      renderer.drawFrameDecor(x, f.id, 104, 148, { thumb: true });
+      renderer.drawThumb(x, f.id, 104, 148);
       cek(`Bingkai "${f.name}" bisa digambar`, true, `latar ${st.bg}`);
     } catch (e) {
       cek(`Bingkai "${f.name}" bisa digambar`, false, e.message);

@@ -50,6 +50,7 @@
     BAD_PHOTO: "BAD_PHOTO",
     RENDER_UNAVAILABLE: "RENDER_UNAVAILABLE",
     RENDER_FAILED: "RENDER_FAILED",
+    BAD_FRAME: "BAD_FRAME",
 
     // --- stok kode ---
     OUT_OF_STOCK: "OUT_OF_STOCK",
@@ -99,6 +100,7 @@
   var LIMIT = {
     // ukuran badan permintaan
     BODY_KECIL: "16kb",
+    BODY_SEDANG: "600kb",  // pratinjau: 3 foto kecil (sisi ≤ 720 px)
     BODY_BESAR: "25mb",
 
     // panjang input (mencegah log & email membengkak)
@@ -123,6 +125,10 @@
     UPLOAD_MAKS: 120,
     RENDER_IP_MAKS: 300,
     RENDER_KODE_MAKS: 30,
+    // pratinjau bingkai premium (tanpa login): cukup untuk mencoba semua
+    // bingkai & filter berkali-kali, terlalu sedikit untuk membanjiri CPU
+    PRATINJAU_WINDOW_MS: 10 * 60 * 1000,
+    PRATINJAU_MAKS: 120,
     ADMIN_WINDOW_MS: 15 * 60 * 1000,
     ADMIN_MAKS: 60,
     GENERATE_MAKS: 20,
@@ -159,6 +165,8 @@
     SESSION: "/api/session",
     ORDER: "/api/fallback-upload",
     RENDER: "/api/render-strip",
+    PREVIEW: "/api/preview-strip",
+    FRAME_THUMB: "/api/frame-thumb",
     TEMPLATE: "/api/template",
     TEMPLATE_IMAGE: "/api/template/image",
     HEALTH: "/healthz",
@@ -173,6 +181,11 @@
 
   /** Rute yang boleh menerima badan besar (foto / template) */
   var ROUTE_BESAR = [ROUTE.ORDER, ROUTE.RENDER, ROUTE.ADMIN_TEMPLATE];
+  /** Rute berbadan sedang (foto kecil untuk pratinjau) */
+  var ROUTE_SEDANG = [ROUTE.PREVIEW];
 
-  return { ERR: ERR, REDEEM: REDEEM, HTTP: HTTP, LIMIT: LIMIT, ROUTE: ROUTE, ROUTE_BESAR: ROUTE_BESAR };
+  return {
+    ERR: ERR, REDEEM: REDEEM, HTTP: HTTP, LIMIT: LIMIT, ROUTE: ROUTE,
+    ROUTE_BESAR: ROUTE_BESAR, ROUTE_SEDANG: ROUTE_SEDANG,
+  };
 });

@@ -93,7 +93,9 @@ test('render: server mati-suri dengan rapi kalau canvas tidak terpasang', () => 
 test('render: browser jatuh ke versi berwatermark kalau server tidak bisa', () => {
   assert.ok(index.includes('RENDER_UNAVAILABLE') || index.includes('ambilStripUntukDiunduh'), 'harus ada jalur cadangan');
   const fn = index.slice(index.indexOf('async function ambilStripUntukDiunduh'));
-  assert.ok(fn.slice(0, 1600).includes('$("stripImg").src'), 'cadangannya memakai gambar yang sudah tampil (berwatermark)');
+  assert.ok(fn.slice(0, 1600).includes('S.stripBlob'), 'cadangannya memakai gambar yang sudah tampil (berwatermark)');
+  // CSP connect-src 'self' memblokir fetch ke data:/blob: — dulu Unduh gratis gagal diam-diam
+  assert.ok(!/fetch\(\s*src\s*\)/.test(index), 'jangan fetch() data:/blob: URL');
 });
 
 test('render: unduhan premium TIDAK lagi memakai kanvas browser', () => {

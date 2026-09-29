@@ -87,7 +87,15 @@ for i in $(seq 1 20); do
 done
 cek "tebakan beruntun diblokir (429)" 1 "$kena"
 
-echo "── 8. Server masih sehat setelah semua serangan"
+echo "── 8. Bingkai premium tidak bocor ke browser"
+grep -q "rgba(216,140,165" <(curl -s "$BASE/shared/strip-renderer.js") \
+  && { echo "  ✗ desain bingkai premium ada di kode browser"; gagal=1; } \
+  || echo "  ✓ desain bingkai premium hanya di server"
+cek "thumbnail bingkai premium dari server" 200 "$(status "$BASE/api/frame-thumb?id=blush")"
+cek "pratinjau: bingkai asing ditolak" 400 "$(status -X POST -H 'content-type: application/json' -d '{"frameId":"x","photos":[]}' "$BASE/api/preview-strip")"
+cek "pratinjau: body besar ditolak" 413 "$(status -X POST -H 'content-type: application/json' --data-binary @"$DATA_DIR/besar.json" "$BASE/api/preview-strip")"
+
+echo "── 9. Server masih sehat setelah semua serangan"
 cek "healthz" 200 "$(status "$BASE/healthz")"
 if grep -q "unhandled" "$LOG"; then echo "  ✗ ada error tak tertangani:"; grep unhandled "$LOG"; gagal=1; else echo "  ✓ tidak ada error tak tertangani"; fi
 

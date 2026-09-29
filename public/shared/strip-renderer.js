@@ -4,6 +4,12 @@
  *   • di browser  : untuk pratinjau & unduhan versi gratis (berwatermark)
  *   • di server   : untuk unduhan HD premium (tidak bisa diakali DevTools)
  *
+ * Bingkai PREMIUM sengaja TIDAK ada di berkas ini. Desainnya tinggal di
+ * lib/premium-frames.js (hanya di server) dan didaftarkan lewat
+ * registerFrame(). Browser hanya menerima gambar pratinjau kecil
+ * berwatermark dari server — kode desainnya tidak pernah sampai ke HP
+ * pengunjung, jadi strip premium bersih mustahil dibuat tanpa kode.
+ *
  * Kenapa harus satu berkas:
  *   Kalau penggambaran ditulis dua kali (sekali di browser, sekali di server),
  *   suatu hari keduanya PASTI berbeda — pembeli protes "hasil unduhannya tidak
@@ -49,108 +55,95 @@
     { id: "plum", name: "Plum", premium: true },
   ];
 
-  function frameStyle(id) {
-    switch (id) {
-      case "linen":
-        return { bg: "#F3EEE2", accent: C.cloverDeep, dark: false };
-      case "blush":
-        return { bg: "#FFFDF9", wash: "rgba(249,228,235,.85)", accent: C.plum, dark: false };
-      case "mint":
-        return { bg: "#FBFFFE", wash: "rgba(134,242,236,.4)", accent: C.plum, dark: false };
-      case "plum":
-        return { bg: C.plum, accent: C.mint, dark: true };
-      default:
-        return { bg: C.cream, accent: C.clover, dark: false };
-    }
+  /*
+   * DAFTAR DESAIN BINGKAI: id → { style, decor }
+   *   style  { bg, wash?, accent, dark }
+   *   decor  function (x, W, H, s, C) — s(v) mengubah ukuran relatif lebar
+   *          104 px (thumbnail) ke ukuran kanvas sebenarnya
+   * Hanya bingkai GRATIS yang didefinisikan di sini.
+   */
+  var DESAIN = {
+    clover: {
+      style: { bg: C.cream, accent: C.clover, dark: false },
+      decor: function (x, W, H, s) {
+        var clover = function (cx, cy, r, color) {
+          x.save();
+          x.translate(cx, cy);
+          x.fillStyle = color;
+          for (var i = 0; i < 4; i++) {
+            x.rotate(Math.PI / 2);
+            x.beginPath();
+            x.ellipse(0, -r * 0.85, r * 0.6, r * 0.85, 0, 0, Math.PI * 2);
+            x.fill();
+          }
+          x.restore();
+        };
+        clover(s(13), s(13), s(6), C.clover);
+        clover(W - s(14), H - s(18), s(7), "rgba(174,175,78,.75)");
+        clover(W - s(15), s(20), s(4.5), "rgba(174,175,78,.45)");
+      },
+    },
+    linen: {
+      style: { bg: "#F3EEE2", accent: C.cloverDeep, dark: false },
+      decor: function (x, W, H, s) {
+        x.strokeStyle = "rgba(142,143,58,.5)";
+        x.lineWidth = s(1.2);
+        x.strokeRect(s(5), s(5), W - s(10), H - s(10));
+        x.setLineDash([s(3), s(3)]);
+        x.strokeStyle = "rgba(142,143,58,.32)";
+        x.lineWidth = s(1);
+        x.strokeRect(s(9), s(9), W - s(18), H - s(18));
+        x.setLineDash([]);
+      },
+    },
+  };
+
+  /** Server menambahkan desain bingkai premium lewat fungsi ini. */
+  function registerFrame(id, def) {
+    DESAIN[id] = def;
   }
 
-  /** Ornamen bingkai. `unit` = skala relatif lebar 104px (ukuran thumbnail). */
+  /** true = desain bingkai ini tersedia di sini (browser: hanya yang gratis) */
+  function hasFrame(id) {
+    return Object.prototype.hasOwnProperty.call(DESAIN, id);
+  }
+
+  function frameStyle(id) {
+    return (hasFrame(id) ? DESAIN[id] : DESAIN.clover).style;
+  }
+
+  /** Ornamen bingkai. `thumb` = gambar di ukuran thumbnail (lebar 104 px). */
   function drawFrameDecor(x, id, W, H, opts) {
+    if (!hasFrame(id) || !DESAIN[id].decor) return;
     var thumb = opts && opts.thumb;
     var s = function (v) {
       return v * (thumb ? 1 : W / 104);
     };
+    DESAIN[id].decor(x, W, H, s, C);
+  }
 
-    if (id === "clover") {
-      var clover = function (cx, cy, r, color) {
-        x.save();
-        x.translate(cx, cy);
-        x.fillStyle = color;
-        for (var i = 0; i < 4; i++) {
-          x.rotate(Math.PI / 2);
-          x.beginPath();
-          x.ellipse(0, -r * 0.85, r * 0.6, r * 0.85, 0, 0, Math.PI * 2);
-          x.fill();
-        }
-        x.restore();
-      };
-      clover(s(13), s(13), s(6), C.clover);
-      clover(W - s(14), H - s(18), s(7), "rgba(174,175,78,.75)");
-      clover(W - s(15), s(20), s(4.5), "rgba(174,175,78,.45)");
+  /** Thumbnail mini bingkai (104 x 148) untuk baris pilihan bingkai */
+  function drawThumb(x, id, W, H) {
+    var st = frameStyle(id);
+    x.fillStyle = st.bg;
+    x.fillRect(0, 0, W, H);
+    if (st.wash) {
+      x.fillStyle = st.wash;
+      x.fillRect(0, 0, W, H);
     }
-
-    if (id === "linen") {
-      x.strokeStyle = "rgba(142,143,58,.5)";
-      x.lineWidth = s(1.2);
-      x.strokeRect(s(5), s(5), W - s(10), H - s(10));
-      x.setLineDash([s(3), s(3)]);
-      x.strokeStyle = "rgba(142,143,58,.32)";
-      x.lineWidth = s(1);
-      x.strokeRect(s(9), s(9), W - s(18), H - s(18));
-      x.setLineDash([]);
-    }
-
-    if (id === "blush") {
-      var petal = function (px, py, sz) {
-        x.save();
-        x.translate(px, py);
-        x.fillStyle = "rgba(216,140,165,.85)";
-        for (var a = 0; a < 5; a++) {
-          x.rotate((Math.PI * 2) / 5);
-          x.beginPath();
-          x.ellipse(0, sz * 0.75, sz * 0.4, sz * 0.75, 0, 0, Math.PI * 2);
-          x.fill();
-        }
-        x.fillStyle = C.clover;
-        x.beginPath();
-        x.arc(0, 0, sz * 0.34, 0, Math.PI * 2);
-        x.fill();
-        x.restore();
-      };
-      petal(s(12), s(12), s(5.5));
-      petal(W - s(13), H - s(20), s(6.5));
-      petal(W - s(16), s(24), s(4));
-    }
-
-    if (id === "mint") {
-      x.strokeStyle = "rgba(108,72,98,.35)";
-      x.lineWidth = s(1.4);
+    var pad = W * 0.14, pw = W - pad * 2, ph = pw * 0.62, gap = H * 0.045;
+    for (var i = 0; i < 3; i++) {
+      var y = pad * 0.8 + i * (ph + gap);
+      x.fillStyle = st.dark ? "#4A3A46" : "#D7D0C4";
+      x.fillRect(pad, y, pw, ph);
+      x.fillStyle = st.dark ? "#5D4A58" : "#C3BAAB";
       x.beginPath();
-      for (var i2 = 0; i2 <= W; i2 += s(4)) x.lineTo(i2, s(7) + Math.sin(i2 / s(9)) * s(2.2));
-      x.stroke();
-      x.beginPath();
-      for (var i3 = 0; i3 <= W; i3 += s(4)) x.lineTo(i3, H - s(7) + Math.sin(i3 / s(9)) * s(2.2));
-      x.stroke();
-      x.fillStyle = "rgba(169,186,214,.9)";
-      [[s(9), H * 0.42], [W - s(9), H * 0.6]].forEach(function (p) {
-        x.beginPath();
-        x.arc(p[0], p[1], s(2.6), 0, Math.PI * 2);
-        x.fill();
-      });
+      x.arc(pad + pw * 0.5, y + ph * 0.42, ph * 0.22, 0, Math.PI * 2);
+      x.fill();
     }
-
-    if (id === "plum") {
-      x.fillStyle = "rgba(134,242,236,.9)";
-      [[s(8), s(12)], [W - s(10), s(24)], [s(11), H - s(16)], [W - s(14), H - s(30)], [W / 2, s(6)]]
-        .forEach(function (p) {
-          x.beginPath();
-          x.arc(p[0], p[1], s(1.7), 0, Math.PI * 2);
-          x.fill();
-        });
-      x.strokeStyle = "rgba(249,228,235,.45)";
-      x.lineWidth = s(1);
-      x.strokeRect(s(6), s(6), W - s(12), H - s(12));
-    }
+    drawFrameDecor(x, id, W, H, { thumb: true });
+    x.fillStyle = st.accent;
+    x.fillRect(pad, H - pad * 0.85, pw, 2.5);
   }
 
   /**
@@ -164,6 +157,7 @@
    *   frameId    id bingkai
    *   filter     "warna" | "bw" | "sepia"
    *   watermark  true = tempel watermark (versi gratis)
+   *   watermarkSeed  angka (opsional) — pola watermark; kosong = acak
    *   dateText   teks tanggal di footer
    */
   // ---- Ukuran fisik strip (mm). SATU acuan untuk semuanya ----
@@ -223,21 +217,68 @@
 
     if (o.templateImage) ctx.drawImage(o.templateImage, 0, 0, W, H);
 
-    if (o.watermark) drawWatermark(ctx, W, H, false);
+    if (o.watermark) drawWatermark(ctx, W, H, false, o.watermarkSeed);
     return { width: W, height: H };
   }
 
-  function drawWatermark(ctx, W, H, dark) {
+  /** Angka acak ber-benih (mulberry32): pola watermark beda di tiap strip */
+  function acak(benih) {
+    var a = (benih >>> 0) || 1;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /*
+   * WATERMARK VERSI GRATIS — dibuat supaya SULIT dihapus, bukan sekadar terlihat:
+   *   • rapat & menutupi SELURUH strip, termasuk wajah di tiap foto
+   *   • dua warna berselang (terang & gelap): terlihat di foto terang maupun
+   *     gelap, dan tidak bisa dibuang dengan satu penyesuaian warna
+   *   • sudut, pergeseran baris, dan posisi tanda semanggi ACAK per strip —
+   *     tidak ada pola tetap yang bisa "dipelajari" penghapus AI
+   */
+  function drawWatermark(ctx, W, H, dark, benih) {
+    var rnd = acak(benih == null ? Math.floor(Math.random() * 4294967296) : benih);
+    var teks = "ONE STRIP CLOVER \u00B7 PREVIEW \u00B7 ";
+    var fs = W * 0.05;
+
     ctx.save();
     ctx.translate(W / 2, H / 2);
-    ctx.rotate(-Math.PI / 5);
-    ctx.font = "700 " + W * 0.055 + "px 'Montserrat', sans-serif";
-    ctx.fillStyle = dark ? "rgba(255,255,255,.22)" : "rgba(108,72,98,.22)";
-    ctx.textAlign = "center";
-    for (var wy = -H / 2; wy < H / 2; wy += W * 0.42) {
-      ctx.fillText("ONE STRIP CLOVER · PREVIEW", 0, wy);
+    ctx.rotate(-Math.PI / 5 + (rnd() - 0.5) * 0.3);
+    ctx.font = "700 " + fs + "px 'Montserrat', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    var lebarTeks = Math.max(ctx.measureText(teks).width, fs * 4);
+    var jangkau = W + H; // cukup untuk menutup strip setelah diputar
+    var baris = 0;
+    for (var wy = -jangkau / 2; wy < jangkau / 2; wy += W * 0.15, baris++) {
+      ctx.fillStyle = baris % 2
+        ? "rgba(255,255,255,.34)"
+        : (dark ? "rgba(20,12,18,.32)" : "rgba(59,46,56,.28)");
+      var mulai = -jangkau / 2 - rnd() * lebarTeks;
+      for (var wx = mulai; wx < jangkau / 2; wx += lebarTeks) ctx.fillText(teks, wx, wy);
     }
     ctx.restore();
+
+    // tanda semanggi tersebar acak
+    for (var i = 0; i < 16; i++) {
+      var r = W * (0.025 + rnd() * 0.03);
+      ctx.save();
+      ctx.translate(rnd() * W, rnd() * H);
+      ctx.rotate(rnd() * Math.PI);
+      ctx.fillStyle = i % 2 ? "rgba(255,255,255,.4)" : "rgba(108,72,98,.3)";
+      for (var k = 0; k < 4; k++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.85, r * 0.6, r * 0.85, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   /** Tinggi strip saat memakai template = rasio fisik 56,1 : 171,5 */
@@ -316,7 +357,7 @@
     ctx.fillStyle = dark ? "rgba(249,228,235,.55)" : "rgba(108,72,98,.5)";
     ctx.fillText(o.dateText || "", W / 2, atasFooter + tinggiFooter * 0.72);
 
-    if (o.watermark) drawWatermark(ctx, W, H, dark);
+    if (o.watermark) drawWatermark(ctx, W, H, dark, o.watermarkSeed);
     return { width: W, height: H };
   }
 
@@ -400,6 +441,9 @@
     FRAMES: FRAMES,
     frameStyle: frameStyle,
     drawFrameDecor: drawFrameDecor,
+    drawThumb: drawThumb,
+    registerFrame: registerFrame,
+    hasFrame: hasFrame,
     drawStrip: drawStrip,
     stripHeight: stripHeight,
   };
