@@ -51,7 +51,7 @@
     "node": ">=22"
   },
   "optionalDependencies": {
-    "@napi-rs/canvas": "^0.1.65"
+    "@napi-rs/canvas": "^1.0.10"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
