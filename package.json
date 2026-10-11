@@ -41,11 +41,11 @@
     "smoke": "bash scripts/smoke-test.sh"
   },
   "dependencies": {
-    "dotenv": "^18.0.3",
+    "dotenv": "^18.0.6",
     "express": "^4.19.2",
-    "express-rate-limit": "^8.7.0",
+    "express-rate-limit": "^8.7.1",
     "googleapis": "^182.0.0",
-    "nodemailer": "^10.0.10"
+    "nodemailer": "^10.0.16"
   },
   "engines": {
     "node": ">=22"
