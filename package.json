@@ -45,7 +45,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.7.0",
     "googleapis": "^182.0.0",
-    "nodemailer": "^10.0.10"
+    "nodemailer": "^10.1.4"
   },
   "engines": {
     "node": ">=22"
